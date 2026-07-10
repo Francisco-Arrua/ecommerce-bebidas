@@ -114,6 +114,10 @@ export default function Login() {
           >
             {loading ? "Ingresando..." : "Ingresar"}
           </button>
+
+          <Link style={{ fontSize: "14px", color: "#2563eb", textAlign: "center" }} to="/recuperar">
+            ¿Te olvidaste tu contraseña?
+          </Link>
         </form>
 
         <p style={{ color: "#64748b", fontSize: "14px", textAlign: "center", marginTop: "24px", margin: "24px 0 0 0" }}>

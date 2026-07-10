@@ -6,9 +6,27 @@ export default function Dashboard() {
 
   const obtenerStats = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/dashboard`);
-      const data = await res.json();
-      setStats(data);
+      // 1. Traemos las estadísticas generales del dashboard
+      const resDashboard = await fetch(`${import.meta.env.VITE_API_URL}/dashboard`);
+      const dataDashboard = await resDashboard.json();
+
+      // 2. Traemos las colecciones en paralelo para sacar la cantidad del front
+      let totalColecciones = 0;
+      try {
+        const resColecciones = await fetch(`${import.meta.env.VITE_API_URL}/coleccion`);
+        if (resColecciones.ok) {
+          const dataColecciones = await resColecciones.json();
+          totalColecciones = dataColecciones.length;
+        }
+      } catch (errCol) {
+        console.error("Error trayendo colecciones para métricas:", errCol);
+      }
+
+      // 3. Inyectamos la cantidad de colecciones en el estado consolidado
+      setStats({
+        ...dataDashboard,
+        colecciones: totalColecciones
+      });
     } catch (error) {
       console.error(error);
     }
@@ -84,19 +102,9 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: "100vh", padding: "8px 8px 40px 8px", fontFamily: "Inter, sans-serif" }}>
       <div style={{ maxWidth: "1340px", margin: "0 auto" }}>
-        
-        {/* ENCABEZADO CORREGIDO A TONOS OSCUROS */}
-        <header style={{ marginBottom: "36px" }}>
-          <h1 style={{ fontSize: "26px", fontWeight: 800, margin: 0, color: "#0f172a", letterSpacing: "-0.03em" }}>
-            Resumen General
-          </h1>
-          <p style={{ margin: "6px 0 0 0", color: "#64748b", fontSize: "14px", fontWeight: 500 }}>
-            Métricas, niveles de inventario y actividad reciente en tu catálogo.
-          </p>
-        </header>
 
-        {/* GRILLA DE METRICAS */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "24px" }}>
+        {/* GRILLA DE METRICAS (Actualizada dinámicamente) */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "24px" }}>
           
           {/* TOTAL PRODUCTOS */}
           <div style={cardStyle}>
@@ -129,6 +137,17 @@ export default function Dashboard() {
               <h3 style={{ margin: "14px 0 0 0", fontSize: "12px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Subcategorías</h3>
             </div>
             <h2 style={{ margin: "16px 0 0 0", fontSize: "36px", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em" }}>{stats.subcategorias}</h2>
+          </div>
+
+          {/* NUEVA TARJETA: COLECCIONES */}
+          <div style={cardStyle}>
+            <div>
+              <span style={{ width: "36px", height: "36px", background: "#fff7ed", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+              </span>
+              <h3 style={{ margin: "14px 0 0 0", fontSize: "12px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Colecciones</h3>
+            </div>
+            <h2 style={{ margin: "16px 0 0 0", fontSize: "36px", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em" }}>{stats.colecciones}</h2>
           </div>
 
           {/* ACTIVOS EN LINEA */}

@@ -83,7 +83,7 @@ export default function ConfiguracionAdmin() {
           background: "#ffffff",
           padding: "36px",
           borderRadius: "24px",
-          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(255, 255, 255, 0.05)",
+          boxShadow: "0 20px 40px rgba(91, 91, 91, 0.33), 0 1px 3px rgba(255, 255, 255, 0.05)",
           display: "flex",
           flexDirection: "column",
           gap: "32px",

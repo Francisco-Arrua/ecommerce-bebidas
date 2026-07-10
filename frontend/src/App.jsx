@@ -9,6 +9,9 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Carrito from "./pages/Carrito";
 
+import CambiarPasswordPerfil from "./pages/CambiarPasswordPerfil";
+import SolicitarRecuperacion from "./pages/SolicitarRecuperacion";
+import RestablecerPassword from "./pages/RestablecerPassword";
 
 import Promociones from "./pages/Promociones";
 import ColeccionDetalle from "./pages/ColeccionDetalle";
@@ -30,7 +33,10 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/carrito" element={<Carrito />} />
             
-            {/* 🔥 NUEVAS RUTAS PÚBLICAS DE LAS COLECCIONES */}
+            <Route path="/perfil/cambiar-password" element={<CambiarPasswordPerfil />} />
+            <Route path="/recuperar" element={<SolicitarRecuperacion />} />
+            <Route path="/restablecer-password" element={<RestablecerPassword />} />
+            
             <Route path="/promociones" element={<Promociones />} />
             <Route path="/promociones/:id" element={<ColeccionDetalle />} />
 

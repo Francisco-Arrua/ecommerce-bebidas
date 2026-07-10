@@ -22,15 +22,12 @@ export default function PaginasHome() {
       style={{ 
         background: "#ffffff", 
         fontFamily: "'Inter', sans-serif",
-        // Enmarcamos toda la sección en un contenedor limpio con bordes laterales si fuera necesario, 
-        // o simplemente dejamos que las grillas fluyan con líneas perfectas.
-        borderTop: "1px solid #0c1028"
+        width: "100%",
+        boxSizing: "border-box"
       }}
     >
       {paginas.map((pagina, indice) => {
         const esImpar = indice % 2 !== 0;
-        
-        // Jugamos con variaciones sutiles de gris premium para el bloque de texto
         const fondoTexto = esImpar ? "#f1f5f9" : "#f8fafc";
 
         return (
@@ -42,11 +39,14 @@ export default function PaginasHome() {
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
               alignItems: "stretch",
-              width: "100%",
+              width: "100%", // 🚀 Ocupa el 100% del ancho de la pantalla
               boxSizing: "border-box",
               backgroundColor: "#ffffff",
-              // Borde de separación inferior de 2px perfecto
-              borderBottom: "1px solid #0c1028"
+              // ⬇️ Línea superior e inferior que cruzan la pantalla de lado a lado
+              borderTop: "1px solid #0f172a",
+              borderBottom: "1px solid #0f172a",
+              // ⬇️ El espacio de separación limpio entre bloques de páginas
+              marginBottom: "80px", 
             }}
           >
             {/* BLOQUE DE TEXTO ENMARCADO */}
@@ -58,8 +58,8 @@ export default function PaginasHome() {
                 padding: "80px min(10%, 80px)",
                 order: esImpar ? 2 : 1,
                 boxSizing: "border-box",
-                backgroundColor: fondoTexto, // Fondo gris sutil para dar contraste de bloque
-                // Colocamos el borde intermedio de 1px dependiendo de la orientación
+                backgroundColor: fondoTexto, 
+                // Línea divisoria vertical interna entre la imagen y el texto
                 borderLeft: esImpar ? "1px solid #0f172a" : "none",
                 borderRight: !esImpar ? "1px solid #0f172a" : "none",
               }}

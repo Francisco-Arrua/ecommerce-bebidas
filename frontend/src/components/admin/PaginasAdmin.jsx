@@ -175,7 +175,7 @@ export default function PaginasAdmin() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "32px", alignItems: "start" }}>
         
         {/* COLUMNA IZQUIERDA: Formulario */}
-        <div style={{ background: "#ffffff", padding: "36px", borderRadius: "24px", boxShadow: "0 20px 40px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(255, 255, 255, 0.05)" }}>
+        <div style={{ background: "#ffffff", padding: "36px", borderRadius: "24px", boxShadow: "0 10px 20px rgba(98, 98, 98, 0.4), 0 1px 3px rgba(255, 255, 255, 0.05)" }}>
           <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 24px 0", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ color: "#3b82f6", display: "flex" }}>
               {editandoId ? (
@@ -327,7 +327,7 @@ export default function PaginasAdmin() {
 
         {/* COLUMNA DERECHA: Listado */}
         <div>
-          <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 24px 0", color: "#ffffff", display: "flex", alignItems: "center", gap: "10px" }}>
+          <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 24px 0", color: "#1a1a1a", display: "flex", alignItems: "center", gap: "10px" }}>
             <span>Secciones Activas</span>
             <span style={{ fontSize: "12px", background: "rgba(59, 130, 246, 0.15)", padding: "4px 10px", borderRadius: "20px", color: "#3b82f6", fontWeight: 700 }}>{paginas.length}</span>
           </h2>

@@ -140,6 +140,9 @@ model Usuario {
   creadoEn DateTime @default(now())
 
   carrito Carrito?
+
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
 }
 
 model Carrito {

@@ -200,7 +200,7 @@ export default function BannerAdmin() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "32px", alignItems: "start" }}>
         
         {/* COLUMNA IZQUIERDA: Crear / Editar Promoción */}
-        <div style={{ background: "#ffffff", padding: "36px", borderRadius: "24px", boxShadow: "0 20px 40px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02)", border: "1px solid #f1f5f9" }}>
+        <div style={{ background: "#ffffff", padding: "36px", borderRadius: "24px", boxShadow: "0 20px 40px rgba(80, 80, 80, 0.28), 0 1px 3px rgba(0, 0, 0, 0.02)", border: "1px solid #f1f5f9" }}>
           <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 24px 0", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ color: bannerEditando ? "#eab308" : "#3b82f6", display: "flex" }}>
               {bannerEditando ? (

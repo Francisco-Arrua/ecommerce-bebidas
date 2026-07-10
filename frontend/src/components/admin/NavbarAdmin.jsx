@@ -7,8 +7,17 @@ export default function NavbarAdmin() {
   const { usuario, cerrarSesion } = useAuth(); 
 
   const handleLogout = () => {
+    // 1. Forzamos el borrado del token manualmente antes de llamar al contexto
+    localStorage.removeItem("token"); 
+    
+    // 2. Llamamos a tu función global para limpiar el estado de React
     cerrarSesion();
-    navigate("/"); // Redirige a la tienda o al login una vez cerrada la sesión
+    
+    // 3. Redirigimos al inicio
+    navigate("/");
+    
+    // 4. Forzamos una recarga limpia para destruir cualquier estado colgado en memoria
+    window.location.reload();
   };
 
   return (

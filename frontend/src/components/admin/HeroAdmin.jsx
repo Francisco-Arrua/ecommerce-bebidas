@@ -199,7 +199,7 @@ export default function HeroAdmin() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "32px", alignItems: "start" }}>
         
         {/* COLUMNA IZQUIERDA: Crear Slide */}
-        <div style={{ background: "#ffffff", padding: "36px", borderRadius: "24px", boxShadow: "0 20px 40px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(255, 255, 255, 0.05)" }}>
+        <div style={{ background: "#ffffff", padding: "36px", borderRadius: "24px", boxShadow: "0 10px 20px rgba(98, 98, 98, 0.4), 0 1px 3px rgba(255, 255, 255, 0.05)" }}>
           <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 24px 0", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ color: "#3b82f6", display: "flex" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -395,7 +395,7 @@ export default function HeroAdmin() {
 
         {/* COLUMNA DERECHA: Lista de Portadas Existentes */}
         <div>
-          <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 24px 0", color: "#ffffff", display: "flex", alignItems: "center", gap: "10px" }}>
+          <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 24px 0", color: "#0d0d0d", display: "flex", alignItems: "center", gap: "10px" }}>
             <span>Portadas Registradas</span>
             <span style={{ fontSize: "12px", background: "rgba(59, 130, 246, 0.15)", padding: "4px 10px", borderRadius: "20px", color: "#3b82f6", fontWeight: 700 }}>
               {slides.length}

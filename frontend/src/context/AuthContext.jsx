@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
 
-// ✅ Agregamos el export por si requiere importación directa en algún lado
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
@@ -36,12 +35,18 @@ export function AuthProvider({ children }) {
     }
   };
 
+
+  const cerrarSesion = () => {
+    localStorage.removeItem("token"); // Borra el token del almacenamiento
+    setUsuario(null); // Limpia el estado del usuario inmediatamente
+  };
+
   useEffect(() => {
     verificarUsuario();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ usuario, setUsuario, cargando, verificarUsuario }}>
+    <AuthContext.Provider value={{ usuario, setUsuario, cargando, verificarUsuario, cerrarSesion }}>
       {children}
     </AuthContext.Provider>
   );

@@ -52,7 +52,7 @@ export default function Carrito() {
   }
   
   const mensajeWhatsapp = encodeURIComponent(
-    `🛒 Hola! Me interesa realizar el siguiente pedido:\n\n` +
+    `Hola! Me interesa realizar el siguiente pedido:\n\n` +
     `━━━━━━━━━━━━━━━━━━━━━━\n\n` +
     itemsDelCarrito
       .map((item) => {
@@ -69,7 +69,7 @@ export default function Carrito() {
       })
       .join("\n\n") +
     `\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-    `💰 Total estimado: $${totalCompra.toLocaleString("es-AR")}\n\n` +
+    `Total estimado: $${totalCompra.toLocaleString("es-AR")}\n\n` +
     `Quedo atento. ¡Muchas gracias!`
   );
     

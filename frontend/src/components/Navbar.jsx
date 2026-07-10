@@ -268,10 +268,6 @@ export default function Navbar({ busqueda, setBusqueda }) {
                 >
                   {usuario ? (
                     <>
-                      <div style={{ padding: "12px 20px", fontSize: "11px", color: "#64748b", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: "4px", letterSpacing: "0.05em" }}>
-                        ROL: <strong style={{ color: "#ffffff" }}>{usuario.rol}</strong>
-                      </div>
-                      
                       {usuario.rol === "ADMIN" && (
                         <div
                           onClick={() => { navigate("/admin"); setMostrarPerfil(false); }}
@@ -282,6 +278,15 @@ export default function Navbar({ busqueda, setBusqueda }) {
                           PANEL ADMIN
                         </div>
                       )}
+
+                      <div
+                        onClick={() => { navigate("/perfil/cambiar-password"); setMostrarPerfil(false); }}
+                        style={{ padding: "12px 20px", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: "#a1a1aa", transition: "all 0.2s" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.06)"; e.currentTarget.style.color = "#ffffff"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#a1a1aa"; }}
+                      >
+                        CAMBIAR CONTRASEÑA
+                      </div>
 
                       <div
                         onClick={cerrarSesion}
