@@ -66,8 +66,10 @@ export default function Producto() {
     );
   }
 
+  const precioFormateado = Number(producto.precio).toLocaleString("es-AR");
+
   const mensaje = encodeURIComponent(
-    `Hola! Me interesa el producto *${producto.nombre}* (${producto.marca || ''}) que vi en la web.`
+    `Hola! Me interesa el producto *${producto.nombre}* (${producto.marca || ''}) que vi en la web. El precio indicado es *$ ${precioFormateado} ARS*.`
   );
   const whatsappUrl = configuracion ? `https://wa.me/${configuracion.whatsapp}?text=${mensaje}` : "#";
 
@@ -233,7 +235,7 @@ export default function Producto() {
             }}
           >
             <span style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.02em" }}>
-              $ {Number(producto.precio).toLocaleString("es-AR")}
+              $ {precioFormateado}
             </span>
             <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 700 }}>ARS</span>
           </div>
@@ -332,7 +334,7 @@ export default function Producto() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.4 0 11.973 0c3.184.001 6.177 1.24 8.427 3.491 2.25 2.253 3.486 5.244 3.485 8.427-.003 6.616-5.343 11.962-11.918 11.962-2.004-.001-3.973-.504-5.717-1.464L0 24zm6.154-3.461c1.656.982 3.272 1.499 4.908 1.5 5.462 0 9.904-4.43 9.907-9.885.002-2.643-1.026-5.127-2.897-7.001-1.872-1.873-4.359-2.903-7.005-2.904-5.46 0-9.902 4.43-9.906 9.886-.001 1.748.48 3.409 1.393 4.869l-.999 3.648 3.733-.979zM16.92 14.19c-.31-.155-1.835-.905-2.119-1.01-.284-.103-.49-.155-.697.156-.206.31-.798.981-.978 1.188-.181.206-.361.233-.671.078-.31-.155-1.309-.48-2.494-1.536-.922-.823-1.545-1.839-1.726-2.149-.181-.31-.018-.477.136-.631.139-.139.31-.361.464-.541.155-.181.206-.31.31-.516.103-.206.052-.387-.026-.541-.077-.155-.697-1.677-.954-2.296-.252-.606-.508-.524-.697-.534-.18-.01-.387-.01-.594-.01-.206 0-.542.078-.826.387-.283.31-1.084 1.058-1.084 2.581s1.11 3.018 1.26 3.224c.15.206 2.184 3.334 5.292 4.673.739.319 1.317.51 1.764.652.743.236 1.419.203 1.953.123.595-.089 1.835-.749 2.093-1.446.258-.697.258-1.291.181-1.417-.077-.127-.283-.207-.593-.363z"/>
             </svg>
-            Consultar disponibilidad
+            Consultar por WhatsApp
           </a>
         </div>
       </main>
