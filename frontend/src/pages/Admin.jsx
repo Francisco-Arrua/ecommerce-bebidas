@@ -15,6 +15,17 @@ import { useEffect, useState } from "react";
 
 export default function Admin() {
   const [seccion, setSeccion] = useState("productos");
+  const [esMovil, setEsMovil] = useState(false);
+
+  // Detectamos si el usuario está en móvil o tablet (menos de 1024px)
+  useEffect(() => {
+    const checkResponsive = () => {
+      setEsMovil(window.innerWidth < 1024);
+    };
+    checkResponsive(); // Chequeo inicial
+    window.addEventListener("resize", checkResponsive);
+    return () => window.removeEventListener("resize", checkResponsive);
+  }, []);
 
   return (
     <div
@@ -28,10 +39,9 @@ export default function Admin() {
         overflow: "hidden"
       }}
     >
-      {/* 🔥 EL NAVBAR QUEDA ARRIBA DE TODO, CORRIENDO DE PUNTA A PUNTA */}
-      <NavbarAdmin />
 
-      {/* 👇 CLAVE 2: Contenedor inferior que se divide horizontalmente */}
+      <NavbarAdmin seccion={seccion} setSeccion={setSeccion} />
+
       <div
         style={{
           display: "flex",
@@ -40,59 +50,33 @@ export default function Admin() {
           overflow: "hidden"
         }}
       >
-        {/* El Sidebar ahora arranca abajo del Navbar, a la izquierda */}
-        <Sidebar
-          seccion={seccion}
-          setSeccion={setSeccion}
-        />
 
-        {/* Contenedor derecho scrollable para las vistas del panel */}
+        {!esMovil && (
+          <Sidebar
+            seccion={seccion}
+            setSeccion={setSeccion}
+          />
+        )}
+
         <div
           style={{
             flex: 1,
-            padding: "24px", // Un poco de padding global para despegar los componentes de los bordes
+            // Ajustamos el padding dinámicamente para no perder espacio en celulares
+            padding: esMovil ? "16px" : "24px", 
             overflowY: "auto",
             height: "100%"
           }}
         >
-          {seccion === "dashboard" && (
-            <Dashboard />
-          )}
-
-          {seccion === "productos" && (
-            <ProductosAdmin />
-          )}
-
-          {seccion === "categorias" && (
-            <CategoriasAdmin />
-          )}
-          
-          {seccion === "subcategorias" && (
-            <SubcategoriasAdmin />
-          )}
-          
-          {seccion === "hero" && (
-            <HeroAdmin />
-          )}
-          
-          {seccion === "banner" && (
-            <BannerAdmin />
-          )}
-          {seccion === "colecciones" && (
-            <ColeccionesAdmin />
-          )}
-          
-          {seccion === "configuracion" && (
-            <ConfiguracionAdmin />
-          )}
-          
-          {seccion === "paginas" && (
-            <PaginasAdmin />
-          )}
-          
-          {seccion === "clientes" && (
-            <Clientes />
-          )}
+          {seccion === "dashboard" && <Dashboard />}
+          {seccion === "productos" && <ProductosAdmin />}
+          {seccion === "categorias" && <CategoriasAdmin />}
+          {seccion === "subcategorias" && <SubcategoriasAdmin />}
+          {seccion === "hero" && <HeroAdmin />}
+          {seccion === "banner" && <BannerAdmin />}
+          {seccion === "colecciones" && <ColeccionesAdmin />}
+          {seccion === "configuracion" && <ConfiguracionAdmin />}
+          {seccion === "paginas" && <PaginasAdmin />}
+          {seccion === "clientes" && <Clientes />}
         </div>
       </div>
     </div>
