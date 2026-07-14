@@ -1,17 +1,11 @@
 import { useEffect, useState } from "react";
+// import imageCompression from "browser-image-compression";
 
 export default function HeroAdmin() {
   const [slides, setSlides] = useState([]);
   const [editandoId, setEditandoId] = useState(null);
-  const [editForm, setEditForm] = useState({
-    titulo: "",
-    subtitulo: "",
-    textoBoton: "",
-    linkBoton: "",
-    imagen: "",
-    orden: 0,
-  });
-
+  
+  // Estado para la creación
   const [formData, setFormData] = useState({
     titulo: "",
     subtitulo: "",
@@ -21,13 +15,27 @@ export default function HeroAdmin() {
     orden: 0,
   });
 
+  // Estado para la edición
+  const [editForm, setEditForm] = useState({
+    titulo: "",
+    subtitulo: "",
+    textoBoton: "",
+    linkBoton: "",
+    imagen: "",
+    orden: 0,
+  });
+
+  // Estado para feedback visual de carga de imágenes
+  const [subiendoForm, setSubiendoForm] = useState(false);
+  const [subiendoEdit, setSubiendoEdit] = useState(false);
+
   const obtenerSlides = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/hero`);
       const data = await res.json();
       setSlides(data.sort((a, b) => a.orden - b.orden));
     } catch (error) {
-      console.error(error);
+      console.error("Error al obtener portadas:", error);
     }
   };
 
@@ -38,13 +46,15 @@ export default function HeroAdmin() {
   const crearSlide = async (e) => {
     if (e) e.preventDefault();
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/hero`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/hero`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
+
+      if (!res.ok) throw new Error("Error al crear la portada");
 
       setFormData({
         titulo: "",
@@ -58,6 +68,7 @@ export default function HeroAdmin() {
       obtenerSlides();
     } catch (error) {
       console.error(error);
+      alert("No se pudo crear la portada. Revisa la consola.");
     }
   };
 
@@ -73,9 +84,21 @@ export default function HeroAdmin() {
     });
   };
 
+  const cancelarEdicion = () => {
+    setEditandoId(null);
+    setEditForm({
+      titulo: "",
+      subtitulo: "",
+      textoBoton: "",
+      linkBoton: "",
+      imagen: "",
+      orden: 0,
+    });
+  };
+
   const guardarEdicion = async () => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/hero/${editandoId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/hero/${editandoId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -83,19 +106,23 @@ export default function HeroAdmin() {
         body: JSON.stringify(editForm),
       });
 
+      if (!res.ok) throw new Error("Error al guardar cambios");
+
       setEditandoId(null);
       obtenerSlides();
     } catch (error) {
       console.error(error);
+      alert("No se pudieron guardar los cambios.");
     }
   };
 
   const eliminarSlide = async (id) => {
     if (!confirm("¿Eliminar slide?")) return;
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/hero/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/hero/${id}`, {
         method: "DELETE",
       });
+      if (!res.ok) throw new Error("Error al eliminar");
       obtenerSlides();
     } catch (error) {
       console.error(error);
@@ -104,28 +131,58 @@ export default function HeroAdmin() {
 
   const cambiarActivo = async (id) => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/hero/${id}/activo`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/hero/${id}/activo`, {
         method: "PATCH",
       });
+      if (!res.ok) throw new Error("Error al cambiar estado");
       obtenerSlides();
     } catch (error) {
       console.error(error);
     }
   };
 
+  // Función utilizando la librería browser-image-compression
+// Función modificada para subir original, con la compresión comentada para el futuro
   const subirImagenHero = async (e, esEdicion = false) => {
     const archivo = e.target.files[0];
     if (!archivo) return;
 
-    const formDataImagen = new FormData();
-    formDataImagen.append("file", archivo);
+    // Activamos spinner de carga correspondiente
+    if (esEdicion) setSubiendoEdit(true);
+    else setSubiendoForm(true);
 
     try {
+      /* =======================================================================
+         COMPRESIÓN DE IMÁGENES
+         Para volver a activar la compresión en el futuro, descomentá este bloque
+         y usá "archivoProcesado" en el FormData en lugar de "archivo".
+         ======================================================================= */
+      /*
+      const opcionesCompresion = {
+        maxSizeMB: 0.3,            // Máximo 300 KB
+        maxWidthOrHeight: 1920,    // Redimensionar a Full HD
+        useWebWorker: true,
+        fileType: "image/jpeg"
+      };
+      console.log(`Tamaño original: ${(archivo.size / 1024 / 1024).toFixed(2)} MB`);
+      const archivoProcesado = await imageCompression(archivo, opcionesCompresion);
+      console.log(`Tamaño comprimido: ${(archivoProcesado.size / 1024 / 1024).toFixed(2)} MB`);
+      */
+      /* ======================================================================= */
+
+      // Actualmente sube el archivo original para mantener el 100% de la calidad visual
+      const archivoParaSubir = archivo; // <-- Si descomentás lo de arriba, cambiá "archivo" por "archivoProcesado"
+
+      const formDataImagen = new FormData();
+      formDataImagen.append("file", archivoParaSubir);
+
+      // Subir al backend
       const res = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
         method: "POST",
         body: formDataImagen,
       });
 
+      if (!res.ok) throw new Error("Error al subir archivo");
       const data = await res.json();
 
       if (esEdicion) {
@@ -140,11 +197,15 @@ export default function HeroAdmin() {
         }));
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error al subir imagen:", error);
+      alert("Hubo un problema al subir la imagen.");
+    } finally {
+      if (esEdicion) setSubiendoEdit(false);
+      else setSubiendoForm(false);
     }
   };
 
-  // Base estética unificada
+  // Base estética unificada para inputs
   const inputEstiloBase = {
     padding: "12px 16px",
     borderRadius: "14px",
@@ -195,11 +256,11 @@ export default function HeroAdmin() {
         </p>
       </header>
 
-      {/* Grid de dos columnas idéntico al banner de publicidad */}
+      {/* Grid de dos columnas */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "32px", alignItems: "start" }}>
         
         {/* COLUMNA IZQUIERDA: Crear Slide */}
-        <div style={{ background: "#ffffff", padding: "36px", borderRadius: "24px", boxShadow: "0 10px 20px rgba(98, 98, 98, 0.4), 0 1px 3px rgba(255, 255, 255, 0.05)" }}>
+        <div style={{ background: "#ffffff", padding: "36px", borderRadius: "24px", boxShadow: "0 10px 20px rgba(98, 98, 98, 0.15), 0 1px 3px rgba(0, 0, 0, 0.05)" }}>
           <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 24px 0", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ color: "#3b82f6", display: "flex" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -287,6 +348,7 @@ export default function HeroAdmin() {
                   accept="image/*"
                   onChange={(e) => subirImagenHero(e, false)}
                   style={{ display: "none" }}
+                  disabled={subiendoForm}
                 />
                 <label 
                   htmlFor="subir-imagen-hero-form"
@@ -302,14 +364,24 @@ export default function HeroAdmin() {
                     color: "#475569",
                     fontSize: "14px",
                     fontWeight: 500,
-                    cursor: "pointer",
+                    cursor: subiendoForm ? "not-allowed" : "pointer",
                     transition: "all 0.2s"
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.borderColor = "#94a3b8"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
+                  onMouseEnter={(e) => { 
+                    if (!subiendoForm) {
+                      e.currentTarget.style.background = "#f1f5f9"; 
+                      e.currentTarget.style.borderColor = "#94a3b8"; 
+                    }
+                  }}
+                  onMouseLeave={(e) => { 
+                    if (!subiendoForm) {
+                      e.currentTarget.style.background = "#f8fafc"; 
+                      e.currentTarget.style.borderColor = "#cbd5e1"; 
+                    }
+                  }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                  {formData.imagen ? "Cambiar imagen seleccionada" : "Subir archivo de imagen"}
+                  {subiendoForm ? "Comprimiendo y subiendo..." : formData.imagen ? "Cambiar imagen seleccionada" : "Subir archivo de imagen"}
                 </label>
               </div>
             </div>
@@ -372,21 +444,22 @@ export default function HeroAdmin() {
 
             <button
               type="submit"
+              disabled={subiendoForm}
               style={{
                 marginTop: "4px",
                 padding: "14px",
-                background: "#2563eb",
+                background: subiendoForm ? "#94a3b8" : "#2563eb",
                 color: "white",
                 border: "none",
                 borderRadius: "14px",
                 fontWeight: "600",
                 fontSize: "14px",
-                cursor: "pointer",
+                cursor: subiendoForm ? "not-allowed" : "pointer",
                 boxShadow: "0 4px 12px rgba(37,99,235,0.15)",
                 transition: "all 0.2s"
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+              onMouseEnter={(e) => { if (!subiendoForm) e.currentTarget.style.opacity = "0.9"; }}
+              onMouseLeave={(e) => { if (!subiendoForm) e.currentTarget.style.opacity = "1"; }}
             >
               Crear Portada Hero
             </button>
@@ -404,7 +477,7 @@ export default function HeroAdmin() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {slides.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "48px 24px", background: "#ffffff", borderRadius: "24px", color: "#94a3b8", fontWeight: 500, boxShadow: "0 20px 40px rgba(0,0,0,0.3)" }}>
+              <div style={{ textAlign: "center", padding: "48px 24px", background: "#ffffff", borderRadius: "24px", color: "#94a3b8", fontWeight: 500, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
                 No hay portadas principales creadas todavía.
               </div>
             ) : (
@@ -415,13 +488,14 @@ export default function HeroAdmin() {
                     background: "#ffffff",
                     padding: "20px",
                     borderRadius: "20px",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                     display: "flex",
                     flexDirection: "column",
-                    gap: "16px"
+                    gap: "16px",
+                    border: "1px solid #f1f5f9"
                   }}
                 >
-                  {/* Vista de Tarjeta Rígida */}
+                  {/* Vista de Tarjeta */}
                   <div
                     style={{
                       padding: "24px",
@@ -546,19 +620,32 @@ export default function HeroAdmin() {
                             accept="image/*"
                             onChange={(e) => subirImagenHero(e, true)}
                             style={{ display: "none" }}
+                            disabled={subiendoEdit}
                           />
                           <label 
                             htmlFor={`editar-imagen-hero-${slide.id}`}
-                            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "10px 14px", borderRadius: "10px", border: "1px dashed #cbd5e1", background: "#f8fafc", color: "#475569", fontSize: "13px", cursor: "pointer" }}
+                            style={{ 
+                              display: "flex", 
+                              alignItems: "center", 
+                              justifyContent: "center", 
+                              gap: "8px", 
+                              padding: "10px 14px", 
+                              borderRadius: "10px", 
+                              border: "1px dashed #cbd5e1", 
+                              background: "#f8fafc", 
+                              color: "#475569", 
+                              fontSize: "13px", 
+                              cursor: subiendoEdit ? "not-allowed" : "pointer" 
+                            }}
                           >
-                            Subir nueva imagen
+                            {subiendoEdit ? "Comprimiendo y subiendo..." : "Subir nueva imagen"}
                           </label>
                         </div>
                       </div>
 
                       <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "4px" }}>
-                        <button onClick={() => setEditandoId(null)} style={botonAccionEstilo}>Cancelar</button>
-                        <button onClick={guardarEdicion} style={{ ...botonAccionEstilo, background: "#3b82f6", color: "white", border: "none" }}>
+                        <button onClick={cancelarEdicion} style={botonAccionEstilo}>Cancelar</button>
+                        <button onClick={guardarEdicion} disabled={subiendoEdit} style={{ ...botonAccionEstilo, background: subiendoEdit ? "#94a3b8" : "#3b82f6", color: "white", border: "none" }}>
                           Guardar Cambios
                         </button>
                       </div>

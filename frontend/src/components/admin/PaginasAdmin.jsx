@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+// 1. Importamos la librería de compresión
+import imageCompression from "browser-image-compression";
 
 export default function PaginasAdmin() {
   const [paginas, setPaginas] = useState([]);
@@ -29,12 +31,36 @@ export default function PaginasAdmin() {
     obtenerPaginas();
   }, []);
 
+  // 2. Modificamos la función para que sea async y comprima la foto
   const subirImagenPagina = async (e) => {
-    const archivo = e.target.files[0];
-    if (!archivo) return;
+    const archivoOriginal = e.target.files[0];
+    if (!archivoOriginal) return;
 
+    // Configuración de compresión (un balance excelente entre peso y calidad)
+    const opcionesCompresion = {
+      maxSizeMB: 1,           // Máximo 1MB aproximado
+      maxWidthOrHeight: 1200,  // Ajusta la resolución si es una foto enorme de celular
+      useWebWorker: true,     // Compresión en segundo plano para no trabar la interfaz
+    };
+
+    let archivoParaSubir = archivoOriginal;
+
+    try {
+      console.log(`Peso original: ${(archivoOriginal.size / 1024 / 1024).toFixed(2)} MB`);
+      
+      // Comprimimos la imagen
+      const archivoComprimido = await imageCompression(archivoOriginal, opcionesCompresion);
+      archivoParaSubir = archivoComprimido;
+
+      console.log(`Peso comprimido: ${(archivoComprimido.size / 1024 / 1024).toFixed(2)} MB`);
+    } catch (errorCompresion) {
+      console.warn("No se pudo comprimir la imagen, se subirá en su estado original:", errorCompresion);
+      // Si falla, archivoParaSubir se queda con el archivoOriginal como respaldo
+    }
+
+    // Preparamos el envío a tu endpoint /upload
     const formDataImagen = new FormData();
-    formDataImagen.append("file", archivo);
+    formDataImagen.append("file", archivoParaSubir);
 
     try {
       const res = await fetch(`${API_URL}/upload`, {
@@ -211,7 +237,7 @@ export default function PaginasAdmin() {
               />
               {formulario.slug && (
                 <span style={{ fontSize: "12px", color: "#3b82f6", fontWeight: 500, marginTop: "4px", display: "inline-block" }}>
-                  URL amigable: <span style={{ color: "#64748b" }}>/{formulario.slug}</span>
+                 <span style={{ color: "#64748b" }}>/{formulario.slug}</span>
                 </span>
               )}
             </div>

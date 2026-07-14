@@ -8,18 +8,21 @@ export default function Buscados() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  // Capturamos los filtros desde la URL (Súper útil para links directos)
   const terminoUrl = searchParams.get("search") || "";
+  const categoriaUrl = searchParams.get("categoria") || "";
+  const subcategoriaUrl = searchParams.get("subcategoria") || "";
+
   const [busqueda, setBusqueda] = useState(terminoUrl);
 
-  // NUEVO: Estado para limitar los productos visibles en el DOM (Tandas de 42)
+  // Límite para paginación virtual en tandas de 42
   const [limiteVisible, setLimiteVisible] = useState(42);
 
   useEffect(() => {
     setBusqueda(terminoUrl);
-    // NUEVO: Cada vez que el término de la URL cambie (nueva búsqueda), 
-    // reseteamos el límite para que empiece desde los primeros 42.
+    // Si cambia cualquier filtro, reseteamos la tanda para volver al inicio
     setLimiteVisible(42);
-  }, [terminoUrl]);
+  }, [terminoUrl, categoriaUrl, subcategoriaUrl]);
 
   useEffect(() => {
     const obtenerProductos = async () => {
@@ -35,19 +38,41 @@ export default function Buscados() {
     obtenerProductos();
   }, []);
 
-  // Filtramos todos los productos que coinciden en memoria (Súper rápido)
-  const resultados = productos.filter(
-    (producto) =>
+  // FILTRADO EN MEMORIA MULTIDIMENSIONAL (Búsqueda + Categoría + Subcategoría)
+  const resultados = productos.filter((producto) => {
+    // 1. Filtro por término de búsqueda (nombre o marca)
+    const coincideTermino =
+      !terminoUrl ||
       producto.nombre.toLowerCase().includes(terminoUrl.toLowerCase()) ||
-      producto.marca?.toLowerCase().includes(terminoUrl.toLowerCase())
-  );
+      producto.marca?.toLowerCase().includes(terminoUrl.toLowerCase());
 
-  // NUEVO: Cortamos el array filtrado para mostrar solo la porción permitida
+    // 2. Filtro por Categoría (asumiendo que producto.categoriaId es un String o Number)
+    const coincideCategoria =
+      !categoriaUrl || 
+      String(producto.categoriaId) === String(categoriaUrl);
+
+    // 3. Filtro por Subcategoría
+    const coincideSubcategoria =
+      !subcategoriaUrl || 
+      String(producto.subcategoriaId) === String(subcategoriaUrl);
+
+    // El producto se muestra solo si pasa los tres filtros activos
+    return coincideTermino && coincideCategoria && coincideSubcategoria;
+  });
+
+  // Cortamos el array filtrado para la paginación virtual
   const resultadosRenderizados = resultados.slice(0, limiteVisible);
 
-  // NUEVO: Función para cargar los próximos 42 productos
   const cargarMasProductos = () => {
     setLimiteVisible((prev) => prev + 42);
+  };
+
+  // Pequeña lógica para armar un título dinámico descriptivo según lo que se está filtrando
+  const obtenerTituloPagina = () => {
+    if (terminoUrl) return `Resultados para "${terminoUrl}"`;
+    if (subcategoriaUrl) return "Productos de la subcategoría seleccionada";
+    if (categoriaUrl) return "Productos de la categoría seleccionada";
+    return "Todos los productos";
   };
 
   return (
@@ -72,7 +97,7 @@ export default function Buscados() {
             letterSpacing: "-0.01em",
           }}
         >
-          Resultados para "{terminoUrl}"
+          {obtenerTituloPagina()}
         </h1>
 
         <p style={{ color: "#64748b", fontSize: "15px", marginTop: "8px", marginBottom: "30px" }}>
@@ -81,11 +106,10 @@ export default function Buscados() {
 
         {resultados.length === 0 ? (
           <p style={{ color: "#64748b", fontSize: "16px", textAlign: "center", marginTop: "40px" }}>
-            No encontramos coincidencias para tu búsqueda. ¡Prueba con otra palabra!
+            No encontramos coincidencias para los filtros seleccionados. ¡Prueba buscando otra cosa!
           </p>
         ) : (
           <>
-            {/* Renderizamos usando el array cortado (resultadosRenderizados) */}
             <div
               style={{
                 display: "grid",
@@ -169,7 +193,6 @@ export default function Buscados() {
               ))}
             </div>
 
-            {/* NUEVO: Botón "Ver más" estilizado acorde a tu paleta oscura de la vista de clientes */}
             {resultados.length > limiteVisible && (
               <button
                 onClick={cargarMasProductos}
@@ -177,7 +200,7 @@ export default function Buscados() {
                   display: "block",
                   margin: "40px auto 0 auto",
                   padding: "12px 32px",
-                  background: "#0b1d33", // Tono oscuro que combina con tu h1
+                  background: "#0b1d33",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: "12px",
@@ -193,7 +216,7 @@ export default function Buscados() {
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "#0b1d33";
-                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.transform = "0";
                 }}
               >
                 Ver más resultados ({resultados.length - limiteVisible} restantes)

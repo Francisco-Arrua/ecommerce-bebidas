@@ -86,21 +86,76 @@ export default function Dashboard() {
     position: "relative"
   };
 
-  const contenedorSeccionEstilo = {
-    marginTop: "32px",
-    background: "#ffffff",
-    borderRadius: "24px",
-    padding: "36px",
-    border: "1px solid #e2e8f0",
-    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)",
-  };
-
   const productosBajoStock = stats.productosDetalle.filter(
     (producto) => producto.stock <= stockMinimo
   );
 
   return (
-    <div style={{ minHeight: "100vh", padding: "8px 8px 40px 8px", fontFamily: "Inter, sans-serif" }}>
+    <div style={{ minHeight: "100vh", padding: "16px 12px 40px 12px", fontFamily: "Inter, sans-serif" }}>
+      {/* Inyección de CSS responsivo para ajustar paddings, grillas y layouts */}
+      <style>{`
+        .dash-container {
+          margin-top: 32px;
+          background: #ffffff;
+          border-radius: 24px;
+          padding: 36px;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .recent-product-card {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 18px;
+          background: #f8fafc;
+          border-radius: 14px;
+          border: 1px solid #e2e8f0;
+        }
+
+        .recent-product-name {
+          color: #0f172a;
+          font-size: 14px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          font-weight: 600;
+        }
+
+        @media (max-width: 640px) {
+          .dash-container {
+            padding: 20px 16px !important; /* Evita que el padding gigante coma pantalla en mobile */
+          }
+          .header-auditoria {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 16px !important;
+          }
+          .filtro-stock {
+            width: 100% !important;
+            justify-content: space-between !important;
+          }
+          .recent-product-card {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 8px !important;
+          }
+          .recent-product-name {
+            white-space: normal !important; /* Permitimos que baje de línea si el nombre es largo */
+          }
+          .alert-stock-card {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+          .alert-stock-badge {
+            width: 100% !important;
+            text-align: center !important;
+          }
+        }
+      `}</style>
+
       <div style={{ maxWidth: "1340px", margin: "0 auto" }}>
 
         {/* GRILLA DE METRICAS (Actualizada dinámicamente) */}
@@ -185,7 +240,7 @@ export default function Dashboard() {
         </div>
 
         {/* SECCIÓN: ÚLTIMOS PRODUCTOS CARGADOS */}
-        <div style={contenedorSeccionEstilo}>
+        <div className="dash-container">
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "24px", borderBottom: "1px solid #f1f5f9", paddingBottom: "16px" }}>
             <span style={{ color: "#3b82f6", display: "flex" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
@@ -200,20 +255,9 @@ export default function Dashboard() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
               {stats.ultimosProductos.map((producto) => (
-                <div
-                  key={producto.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "14px 18px",
-                    background: "#f8fafc",
-                    borderRadius: "14px",
-                    border: "1px solid #e2e8f0"
-                  }}
-                >
-                  <strong style={{ color: "#0f172a", fontSize: "14px", fontWeight: 600 }}>{producto.nombre}</strong>
-                  <span style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", background: "#ffffff", padding: "4px 10px", borderRadius: "20px", border: "1px solid #e2e8f0" }}>
+                <div key={producto.id} className="recent-product-card">
+                  <strong className="recent-product-name">{producto.nombre}</strong>
+                  <span style={{ fontSize: "11px", fontWeight: 600, color: "#64748b", background: "#ffffff", padding: "4px 10px", borderRadius: "20px", border: "1px solid #e2e8f0", flexShrink: 0 }}>
                     {producto.categoria?.nombre || "-"}
                   </span>
                 </div>
@@ -223,8 +267,8 @@ export default function Dashboard() {
         </div>
 
         {/* SECCIÓN: AUDITORÍA DE INVENTARIO (BAJO STOCK) */}
-        <div style={contenedorSeccionEstilo}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "24px", borderBottom: "1px solid #f1f5f9", paddingBottom: "16px" }}>
+        <div className="dash-container">
+          <div className="header-auditoria" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "24px", borderBottom: "1px solid #f1f5f9", paddingBottom: "16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ color: "#3b82f6", display: "flex" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -236,8 +280,8 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <label style={{ fontSize: "13px", color: "#334155", fontWeight: 600 }}>Umbral crítico:</label>
+            <div className="filtro-stock" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <label style={{ fontSize: "13px", color: "#334155", fontWeight: 600, whiteSpace: "nowrap" }}>Umbral crítico:</label>
               <input
                 type="number"
                 min="0"
@@ -261,6 +305,7 @@ export default function Dashboard() {
                 return (
                   <div
                     key={producto.id}
+                    className="alert-stock-card"
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
@@ -269,6 +314,7 @@ export default function Dashboard() {
                       background: sinStock ? "#fff5f5" : "#ffffff",
                       borderRadius: "14px",
                       border: sinStock ? "1px solid #fecaca" : "1px solid #e2e8f0",
+                      gap: "12px"
                     }}
                   >
                     <div>
@@ -278,13 +324,15 @@ export default function Dashboard() {
                       </div>
                     </div>
                     
-                    <span style={{ 
+                    <span className="alert-stock-badge" style={{ 
                       fontSize: "12px", 
                       fontWeight: 700, 
                       color: sinStock ? "#dc2626" : "#d97706",
                       background: sinStock ? "#ffe4e4" : "#fef3c7",
                       padding: "6px 14px", 
                       borderRadius: "10px",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0
                     }}>
                       {sinStock ? "Sin Unidades" : `${producto.stock} disponibles`}
                     </span>

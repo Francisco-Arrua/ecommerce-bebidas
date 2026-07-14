@@ -11,7 +11,6 @@ import WhatsappFloat from "../components/WhatsappFloat";
 
 export default function Home() {
   const [productos, setProductos] = useState([]);
-  const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
     const obtenerProductos = async () => {
@@ -33,10 +32,7 @@ export default function Home() {
 
   return (
     <>
-      <Navbar
-        busqueda={busqueda}
-        setBusqueda={setBusqueda}
-      />
+      <Navbar />
 
       <Hero />
 

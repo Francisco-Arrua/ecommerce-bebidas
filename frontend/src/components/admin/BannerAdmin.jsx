@@ -1,9 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+// 1. Importamos el compresor
+import imageCompression from "browser-image-compression";
 
 export default function BannerAdmin() {
   const API_URL = import.meta.env.VITE_API_URL;
+  const fileInputRef = useRef(null);
+
   const [banners, setBanners] = useState([]);
   const [bannerEditando, setBannerEditando] = useState(null);
+  const [inputEnFoco, setInputEnFoco] = useState("");
 
   const [nuevoBanner, setNuevoBanner] = useState({
     titulo: "",
@@ -28,6 +33,43 @@ export default function BannerAdmin() {
     obtenerBanners();
   }, []);
 
+  // 2. Modificamos la función para aplicar compresión antes de subir
+  const subirImagen = async (e) => {
+    const archivoOriginal = e.target.files[0];
+    if (!archivoOriginal) return;
+
+    // Configuración de la compresión
+    const opciones = {
+      maxSizeMB: 1,            // Tamaño máximo de 1MB
+      maxWidthOrHeight: 1920,  // Redimensiona si supera Full HD
+      useWebWorker: true,      // Usa hilos de fondo para no congelar la UI
+    };
+
+    try {
+      // Comprimimos el archivo en el navegador del cliente
+      const archivoComprimido = await imageCompression(archivoOriginal, opciones);
+
+      const formData = new FormData();
+      // Enviamos el archivo ya optimizado al servidor
+      formData.append("file", archivoComprimido, archivoOriginal.name);
+
+      const res = await fetch(`${API_URL}/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      setNuevoBanner((prev) => ({
+        ...prev,
+        imagen: data.url,
+      }));
+    } catch (error) {
+      console.error("Error al comprimir o subir la imagen:", error);
+      alert("Hubo un error al procesar la imagen. Intenta con otra.");
+    }
+  };
+
   const crearBanner = async () => {
     if (!nuevoBanner.titulo.trim() && !nuevoBanner.imagen) {
       alert("Por favor, ingresa un título o sube una imagen con el texto de la promoción.");
@@ -50,27 +92,10 @@ export default function BannerAdmin() {
     }
   };
 
-  const subirImagen = async (e) => {
-    const archivo = e.target.files[0];
-    if (!archivo) return;
-
-    const formData = new FormData();
-    formData.append("file", archivo);
-
-    try {
-      const res = await fetch(`${API_URL}/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      setNuevoBanner({
-        ...nuevoBanner,
-        imagen: data.url,
-      });
-    } catch (error) {
-      console.error(error);
+  const quitarImagen = () => {
+    setNuevoBanner((prev) => ({ ...prev, imagen: "" }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -86,8 +111,7 @@ export default function BannerAdmin() {
       orden: banner.orden || 0,
     });
     
-    // Scroll suave hacia el formulario para mejorar la UX al editar
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const guardarEdicion = async () => {
@@ -117,6 +141,9 @@ export default function BannerAdmin() {
       colorFin: "#2563eb",
       orden: 0
     });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const eliminarBanner = async (id) => {
@@ -145,30 +172,21 @@ export default function BannerAdmin() {
     }
   };
 
-  // Base de inputs unificada
-  const inputEstiloBase = {
-    padding: "12px 16px",
-    borderRadius: "14px",
-    border: "1px solid #e2e8f0",
-    outline: "none",
-    fontSize: "14px",
-    color: "#0f172a",
-    backgroundColor: "#f8fafc",
-    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-    boxSizing: "border-box",
-    width: "100%",
-  };
-
-  const manejarFocusInput = (e) => {
-    e.currentTarget.style.borderColor = "#3b82f6";
-    e.currentTarget.style.backgroundColor = "#ffffff";
-    e.currentTarget.style.boxShadow = "0 0 0 4px rgba(59, 130, 246, 0.1)";
-  };
-
-  const manejarBlurInput = (e) => {
-    e.currentTarget.style.borderColor = "#e2e8f0";
-    e.currentTarget.style.backgroundColor = "#f8fafc";
-    e.currentTarget.style.boxShadow = "none";
+  const obtenerEstiloInput = (nombreInput) => {
+    const focusActivo = inputEnFoco === nombreInput;
+    return {
+      padding: "12px 16px",
+      borderRadius: "14px",
+      border: focusActivo ? "1px solid #3b82f6" : "1px solid #e2e8f0",
+      outline: "none",
+      fontSize: "14px",
+      color: "#0f172a",
+      backgroundColor: focusActivo ? "#ffffff" : "#f8fafc",
+      boxShadow: focusActivo ? "0 0 0 4px rgba(59, 130, 246, 0.1)" : "none",
+      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+      boxSizing: "border-box",
+      width: "100%",
+    };
   };
 
   const botonAccionEstilo = {
@@ -186,7 +204,7 @@ export default function BannerAdmin() {
   return (
     <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "16px 8px 40px 8px", fontFamily: "Inter, sans-serif" }}>
       
-      {/* Encabezado - CORREGIDO: Título ahora es visible en fondo claro */}
+      {/* Encabezado */}
       <header style={{ marginBottom: "28px" }}>
         <h1 style={{ fontSize: "28px", fontWeight: 800, margin: 0, color: "#0f172a", letterSpacing: "-0.03em" }}>
           Publicidades
@@ -199,8 +217,8 @@ export default function BannerAdmin() {
       {/* Grid de dos columnas */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "32px", alignItems: "start" }}>
         
-        {/* COLUMNA IZQUIERDA: Crear / Editar Promoción */}
-        <div style={{ background: "#ffffff", padding: "36px", borderRadius: "24px", boxShadow: "0 20px 40px rgba(80, 80, 80, 0.28), 0 1px 3px rgba(0, 0, 0, 0.02)", border: "1px solid #f1f5f9" }}>
+        {/* COLUMNA IZQUIERDA: Formulario */}
+        <div style={{ background: "#ffffff", padding: "36px", borderRadius: "24px", boxShadow: "0 20px 40px rgba(80, 80, 80, 0.12), 0 1px 3px rgba(0, 0, 0, 0.02)", border: "1px solid #f1f5f9" }}>
           <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 24px 0", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ color: bannerEditando ? "#eab308" : "#3b82f6", display: "flex" }}>
               {bannerEditando ? (
@@ -220,9 +238,9 @@ export default function BannerAdmin() {
                 type="text"
                 placeholder="Ej. 30% OFF en toda la tienda"
                 value={nuevoBanner.titulo}
-                style={inputEstiloBase}
-                onFocus={manejarFocusInput}
-                onBlur={manejarBlurInput}
+                style={obtenerEstiloInput("titulo")}
+                onFocus={() => setInputEnFoco("titulo")}
+                onBlur={() => setInputEnFoco("")}
                 onChange={(e) => setNuevoBanner({ ...nuevoBanner, titulo: e.target.value })}
               />
             </div>
@@ -233,9 +251,9 @@ export default function BannerAdmin() {
                 type="text"
                 placeholder="Ej. Usando el cupón VERANO2026"
                 value={nuevoBanner.subtitulo}
-                style={inputEstiloBase}
-                onFocus={manejarFocusInput}
-                onBlur={manejarBlurInput}
+                style={obtenerEstiloInput("subtitulo")}
+                onFocus={() => setInputEnFoco("subtitulo")}
+                onBlur={() => setInputEnFoco("")}
                 onChange={(e) => setNuevoBanner({ ...nuevoBanner, subtitulo: e.target.value })}
               />
             </div>
@@ -246,9 +264,9 @@ export default function BannerAdmin() {
                 type="number"
                 placeholder="0"
                 value={nuevoBanner.orden || ""}
-                style={inputEstiloBase}
-                onFocus={manejarFocusInput}
-                onBlur={manejarBlurInput}
+                style={obtenerEstiloInput("orden")}
+                onFocus={() => setInputEnFoco("orden")}
+                onBlur={() => setInputEnFoco("")}
                 onChange={(e) => setNuevoBanner({ ...nuevoBanner, orden: Number(e.target.value) })}
               />
             </div>
@@ -260,6 +278,7 @@ export default function BannerAdmin() {
                 <input
                   type="file"
                   id="subir-imagen-banner"
+                  ref={fileInputRef}
                   accept="image/*"
                   onChange={subirImagen}
                   style={{ display: "none" }}
@@ -353,7 +372,13 @@ export default function BannerAdmin() {
                 )}
                 
                 {nuevoBanner.imagen && (
-                  <button type="button" onClick={() => setNuevoBanner({ ...nuevoBanner, imagen: "" })} style={{ position: "absolute", top: "8px", right: "8px", background: "rgba(239, 68, 68, 0.9)", backdropFilter: "blur(4px)", color: "white", border: "none", borderRadius: "50%", width: "22px", height: "22px", cursor: "pointer", fontSize: "10px", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2, boxShadow: "0 2px 6px rgba(0,0,0,0.15)" }}>✕</button>
+                  <button 
+                    type="button" 
+                    onClick={quitarImagen} 
+                    style={{ position: "absolute", top: "8px", right: "8px", background: "rgba(239, 68, 68, 0.9)", backdropFilter: "blur(4px)", color: "white", border: "none", borderRadius: "50%", width: "22px", height: "22px", cursor: "pointer", fontSize: "10px", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2, boxShadow: "0 2px 6px rgba(0,0,0,0.15)" }}
+                  >
+                    ✕
+                  </button>
                 )}
 
                 <div style={{ position: "relative", zIndex: 1 }}>
@@ -369,17 +394,17 @@ export default function BannerAdmin() {
               </div>
             </div>
 
-            {/* Acciones del Formulario Dinámicas */}
+            {/* Acciones del Formulario */}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <button
                 onClick={bannerEditando ? guardarEdicion : crearBanner}
                 style={{
                   padding: "14px",
-                  background: bannerEditando ? "#0862ea" : "#2563eb",
-                  color: "white",
+                  background: bannerEditando ? "#eab308" : "#2563eb",
+                  color: bannerEditando ? "#0f172a" : "white",
                   border: "none",
                   borderRadius: "14px",
-                  fontWeight: "600",
+                  fontWeight: "700",
                   fontSize: "14px",
                   cursor: "pointer",
                   boxShadow: bannerEditando ? "0 4px 12px rgba(234,179,8,0.15)" : "0 4px 12px rgba(37,99,235,0.15)",
@@ -415,7 +440,7 @@ export default function BannerAdmin() {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: Lista de Banners Existentes */}
+        {/* COLUMNA DERECHA: Lista */}
         <div>
           <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 24px 0", color: "#0f172a", display: "flex", alignItems: "center", gap: "10px" }}>
             <span>Banners Registrados</span>
@@ -445,7 +470,7 @@ export default function BannerAdmin() {
                     transition: "all 0.2s"
                   }}
                 >
-                  {/* Preview Rígido en la lista */}
+                  {/* Preview en lista */}
                   <div
                     style={{
                       padding: "24px",
@@ -484,7 +509,7 @@ export default function BannerAdmin() {
                     </div>
                   </div>
 
-                  {/* Fila de Estado e Info */}
+                  {/* Info y Estado */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #f1f5f9", paddingTop: "12px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       <span style={{ fontSize: "12px", fontWeight: 500, color: "#64748b" }}>Posición: <strong style={{ color: "#0f172a" }}>{banner.orden}</strong></span>
@@ -503,13 +528,13 @@ export default function BannerAdmin() {
                       </span>
                     </div>
 
-                    {/* Botones de Acción - AGREGADO: Botón Editar */}
+                    {/* Botones */}
                     <div style={{ display: "flex", gap: "8px" }}>
                       <button
                         onClick={() => editarBanner(banner)}
-                        style={{ ...botonAccionEstilo, borderColor: "#086eea", color: "#047bca", background: "rgba(234, 179, 8, 0.02)" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "#0840ea"; e.currentTarget.style.color = "white"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(234, 179, 8, 0.02)"; e.currentTarget.style.color = "#042cca"; }}
+                        style={{ ...botonAccionEstilo, borderColor: "#eab308", color: "#d97706", background: "rgba(234, 179, 8, 0.02)" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#eab308"; e.currentTarget.style.color = "#0f172a"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(234, 179, 8, 0.02)"; e.currentTarget.style.color = "#d97706"; }}
                       >
                         Editar
                       </button>
@@ -526,14 +551,8 @@ export default function BannerAdmin() {
                       <button
                         onClick={() => eliminarBanner(banner.id)}
                         style={{ ...botonAccionEstilo, borderColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", background: "rgba(239, 68, 68, 0.02)" }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "#ef4444";
-                          e.currentTarget.style.color = "white";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = "rgba(239, 68, 68, 0.02)";
-                          e.currentTarget.style.color = "#ef4444";
-                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "white"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.02)"; e.currentTarget.style.color = "#ef4444"; }}
                       >
                         Eliminar
                       </button>

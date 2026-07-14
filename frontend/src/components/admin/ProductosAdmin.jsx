@@ -1,8 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import imageCompression from "browser-image-compression";
 
-// ==========================================
-// CONFIGURACIONES Y CONSTANTES CENTRALIZADAS
-// ==========================================
 const MAX_IMAGENES = 8;
 const API_URL = import.meta.env.VITE_API_URL;
 const UPLOAD_ENDPOINT = `${API_URL}/upload`;
@@ -60,9 +58,31 @@ export default function ProductosAdmin() {
 
     const nuevasImagenesProcesadas = [];
 
+    // Configuración de compresión optimizada para el catálogo
+    const opcionesCompresion = {
+      maxSizeMB: 1,            // Intentará que no pase de 1MB (generalmente las baja a ~150-200KB)
+      maxWidthOrHeight: 1200,  // Resolución máxima excelente para web y responsive móvil
+      useWebWorker: true,      // Evita tildar la UI del teléfono procesando en segundo plano
+    };
+
     for (const archivo of archivos) {
+      let archivoParaSubir = archivo;
+
+      // Solo intentamos comprimir si el archivo es realmente una imagen
+      if (archivo.type.startsWith("image/")) {
+        try {
+          // Comprimimos la imagen en el dispositivo del usuario
+          archivoParaSubir = await imageCompression(archivo, opcionesCompresion);
+        } catch (error) {
+          console.error("Error al comprimir la imagen, se intentará subir original:", error);
+          // Si por alguna razón falla la compresión, no bloqueamos el flujo; usamos el original
+          archivoParaSubir = archivo;
+        }
+      }
+
       const formDataImagen = new FormData();
-      formDataImagen.append("file", archivo);
+      // 'archivoParaSubir' ahora contiene la imagen optimizada (mantiene el nombre original y tipo)
+      formDataImagen.append("file", archivoParaSubir);
 
       try {
         const res = await fetch(UPLOAD_ENDPOINT, {
@@ -95,46 +115,6 @@ export default function ProductosAdmin() {
 
     e.target.value = "";
   };
-
-  const eliminarImagenIndividual = (indexParaEliminar, esEdicion = false) => {
-    if (esEdicion) {
-      setEditForm((prev) => {
-        const nuevasImgs = prev.imagenes.filter((_, idx) => idx !== indexParaEliminar);
-        if (prev.imagenes[indexParaEliminar]?.principal && nuevasImgs.length > 0) {
-          nuevasImgs[0].principal = true;
-        }
-        return { ...prev, imagenes: nuevasImgs };
-      });
-    } else {
-      setImagenesSubidas((prev) => {
-        const nuevasImgs = prev.filter((_, idx) => idx !== indexParaEliminar);
-        if (prev[indexParaEliminar]?.principal && nuevasImgs.length > 0) {
-          nuevasImgs[0].principal = true;
-        }
-        return nuevasImgs;
-      });
-    }
-  };
-
-  const definirImagenPrincipal = (indexPrincipal, esEdicion = false) => {
-    if (esEdicion) {
-      setEditForm((prev) => ({
-        ...prev,
-        imagenes: prev.imagenes.map((img, idx) => ({
-          ...img,
-          principal: idx === indexPrincipal
-        }))
-      }));
-    } else {
-      setImagenesSubidas((prev) =>
-        prev.map((img, idx) => ({
-          ...img,
-          principal: idx === indexPrincipal
-        }))
-      );
-    }
-  };
-
   // ==========================================
   // EFECTOS Y PETICIONES API
   // ==========================================

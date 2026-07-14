@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import imageCompression from "browser-image-compression";
 
 export default function ColeccionesAdmin() {
   const [colecciones, setColecciones] = useState([]);
@@ -42,11 +43,28 @@ export default function ColeccionesAdmin() {
     const archivo = e.target.files[0];
     if (!archivo) return;
 
-    const formData = new FormData();
-    formData.append("file", archivo);
-
     try {
       setSubiendoImagen(true);
+
+      // Opciones para la compresión de la carátula/portada
+      const opcionesCompresion = {
+        maxSizeMB: 0.3,            // Limita el peso a un máximo de 300 KB
+        maxWidthOrHeight: 1920,    // Redimensiona proporcionalmente si supera Full HD
+        useWebWorker: true,
+        fileType: "image/jpeg"     // Convierte a JPG para una compresión más eficiente
+      };
+
+      console.log(`Tamaño original de carátula: ${(archivo.size / 1024 / 1024).toFixed(2)} MB`);
+      
+      // Comprimimos la imagen de manera asíncrona
+      const archivoComprimido = await imageCompression(archivo, opcionesCompresion);
+      
+      console.log(`Tamaño comprimido de carátula: ${(archivoComprimido.size / 1024 / 1024).toFixed(2)} MB`);
+
+      const formData = new FormData();
+      // Mandamos el archivo ya comprimido al backend
+      formData.append("file", archivoComprimido);
+
       const res = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
         method: "POST",
         body: formData,
@@ -57,8 +75,8 @@ export default function ColeccionesAdmin() {
       const data = await res.json();
       setImagen(data.url || data.secure_url); 
     } catch (error) {
-      console.error("Error subiendo imagen:", error);
-      alert("No se pudo subir la imagen.");
+      console.error("Error procesando o subiendo imagen:", error);
+      alert("No se pudo procesar o subir la imagen.");
     } finally {
       setSubiendoImagen(false);
     }
@@ -296,7 +314,7 @@ export default function ColeccionesAdmin() {
                   onMouseLeave={(e) => { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                  {subiendoImagen ? "Subiendo archivo..." : imagen ? "Cambiar carátula cargada" : "Subir archivo de imagen"}
+                  {subiendoImagen ? "Procesando y subiendo..." : imagen ? "Cambiar carátula cargada" : "Subir archivo de imagen"}
                 </label>
               </div>
             </div>
