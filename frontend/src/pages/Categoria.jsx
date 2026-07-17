@@ -1,18 +1,19 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 export default function Categoria() {
-  const { id } = useParams(); 
+  const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
-  
+
   const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState("Todos");
   const navigate = useNavigate();
   const [limiteVisible, setLimiteVisible] = useState(42);
 
+  // Carga productos cada vez que cambia la categoría (id de la ruta)
   useEffect(() => {
     const obtenerProductos = async () => {
       try {
@@ -21,10 +22,9 @@ export default function Categoria() {
           `${import.meta.env.VITE_API_URL}/productos?categoria=${id}`
         );
         const data = await res.json();
-        
+
         setProductos(data);
-        setSubcategoriaSeleccionada("Todos"); 
-        setLimiteVisible(42); 
+        setLimiteVisible(42);
       } catch (error) {
         console.error("Error cargando productos:", error);
       } finally {
@@ -37,15 +37,25 @@ export default function Categoria() {
     }
   }, [id]);
 
+  // Sincroniza la subcategoría seleccionada con el query param ?sub= de la URL.
+  // Corre al montar Y cada vez que cambia sub, aunque sigamos en la misma
+  // categoría (por ejemplo, click en otra subcategoría desde el Navbar
+  // estando ya parado en /categoria/:id).
+  useEffect(() => {
+    const subParam = searchParams.get("sub");
+    setSubcategoriaSeleccionada(subParam ? Number(subParam) : "Todos");
+    setLimiteVisible(42);
+  }, [searchParams]);
+
   const subcategorias = [
     { id: "Todos", nombre: "Todos" },
     ...Array.from(
       new Map(
         productos
-          .filter(p => p.subcategoria?.id)
-          .map(p => [p.subcategoria.id, { id: p.subcategoria.id, nombre: p.subcategoria.nombre }])
+          .filter((p) => p.subcategoria?.id)
+          .map((p) => [p.subcategoria.id, { id: p.subcategoria.id, nombre: p.subcategoria.nombre }])
       ).values()
-    )
+    ),
   ];
 
   const productosFiltrados =
@@ -61,17 +71,23 @@ export default function Categoria() {
     setLimiteVisible((prev) => prev + 42);
   };
 
+  // Cambia la subcategoría Y actualiza la URL, para que quede
+  // compartible/recargable y el botón "atrás" del navegador funcione.
   const manejarCambioSubcategoria = (subId) => {
-    setSubcategoriaSeleccionada(subId);
     setLimiteVisible(42);
+    if (subId === "Todos") {
+      setSearchParams({});
+    } else {
+      setSearchParams({ sub: subId });
+    }
   };
 
   const obtenerNombreHeader = () => {
     if (subcategoriaSeleccionada !== "Todos") {
-      const subEncontrada = subcategorias.find(s => s.id === subcategoriaSeleccionada);
+      const subEncontrada = subcategorias.find((s) => s.id === subcategoriaSeleccionada);
       return subEncontrada ? subEncontrada.nombre : "Sección";
     }
-    
+
     if (productos.length > 0) {
       const primerProducto = productos[0];
       if (primerProducto.subcategoria?.id === Number(id)) {
@@ -97,7 +113,6 @@ export default function Categoria() {
               {obtenerNombreHeader()}
             </h1>
 
-            {/* BOTONES DE SUBCATEGORÍAS PREMIUM-RECTAS */}
             {subcategorias.length > 2 && (
               <div style={{ display: "flex", gap: "10px", marginTop: "24px", marginBottom: "32px", flexWrap: "wrap" }}>
                 {subcategorias.map((sub) => (
@@ -113,7 +128,7 @@ export default function Categoria() {
                       letterSpacing: "0.05em",
                       transition: "all 0.15s ease",
                       border: "1px solid",
-                      borderRadius: "0px", // Sin redondear para match con Adidas
+                      borderRadius: "0px",
                       borderColor: subcategoriaSeleccionada === sub.id ? "#0f172a" : "#e2e8f0",
                       background: subcategoriaSeleccionada === sub.id ? "#0f172a" : "#ffffff",
                       color: subcategoriaSeleccionada === sub.id ? "#ffffff" : "#0f172a",
@@ -135,7 +150,6 @@ export default function Categoria() {
               </div>
             )}
 
-            {/* GRILLA DE PRODUCTOS ADIDAS-STYLE */}
             {productosFiltrados.length === 0 ? (
               <p style={{ color: "#64748b", fontSize: "14px", fontWeight: 600, marginTop: "32px", textTransform: "uppercase" }}>
                 No se encontraron productos en esta sección.
@@ -164,29 +178,29 @@ export default function Categoria() {
                         e.currentTarget.style.transform = "translateY(0)";
                       }}
                     >
-                      <div 
-                        style={{ 
-                          height: "240px", 
+                      <div
+                        style={{
+                          height: "240px",
                           width: "100%",
-                          position: "relative", 
+                          position: "relative",
                           overflow: "hidden",
                           background: "#f8fafc",
-                          borderBottom: "1px solid #e2e8f0"
+                          borderBottom: "1px solid #e2e8f0",
                         }}
                       >
                         {producto.imagenes?.length > 0 ? (
-                          <img 
-                            src={producto.imagenes[0].url} 
-                            alt={producto.nombre} 
-                            style={{ 
+                          <img
+                            src={producto.imagenes[0].url}
+                            alt={producto.nombre}
+                            style={{
                               position: "absolute",
                               top: 0,
                               left: 0,
-                              width: "100%", 
-                              height: "100%", 
+                              width: "100%",
+                              height: "100%",
                               objectFit: "cover",
-                              objectPosition: "center"
-                            }} 
+                              objectPosition: "center",
+                            }}
                           />
                         ) : (
                           <div
@@ -198,7 +212,7 @@ export default function Categoria() {
                               color: "#94a3b8",
                               fontSize: "12px",
                               fontWeight: 600,
-                              textTransform: "uppercase"
+                              textTransform: "uppercase",
                             }}
                           >
                             Sin imagen
@@ -221,7 +235,6 @@ export default function Categoria() {
                   ))}
                 </div>
 
-                {/* BOTÓN "VER MÁS" LIMPIO Y CONTRASTANTE */}
                 {productosFiltrados.length > limiteVisible && (
                   <button
                     onClick={cargarMasProductos}

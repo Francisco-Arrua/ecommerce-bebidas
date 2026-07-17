@@ -537,7 +537,7 @@ export default function Navbar() {
                       <div
                         key={sub.id}
                         onClick={() => {
-                          navigate(`/categoria/${sub.id}`);
+                          navigate(`/categoria/${categorias[0].id}?sub=${sub.id}`);
                           setMostrarCategoriasDesktop(false);
                         }}
                         style={{ padding: "12px 20px", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: "#a1a1aa", transition: "all 0.2s" }}
@@ -634,7 +634,7 @@ export default function Navbar() {
                       <span 
                         key={sub.id} 
                         onClick={() => { 
-                          navigate(`/categoria/${sub.id}`); 
+                          navigate(`/categoria/${categorias[0].id}?sub=${sub.id}`); 
                           setMenuMovilAbierto(false); 
                           setMostrarCategoriasMovil(false);
                         }}

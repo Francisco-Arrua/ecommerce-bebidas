@@ -1,27 +1,25 @@
 import { prisma } from "../db/prisma.js";
 
-export const getSubcategorias = async (
-  req,
-  res
-) => {
+export const getSubcategorias = async (req, res) => {
   try {
-    const subcategorias =
-      await prisma.subcategoria.findMany({
-        include: {
-          categoria: true,
-        },
-        orderBy: {
-          nombre: "asc",
-        },
-      });
+    const { categoriaId } = req.query;
+
+    const subcategorias = await prisma.subcategoria.findMany({
+      where: categoriaId ? { categoriaId: Number(categoriaId) } : undefined,
+      include: {
+        categoria: true,
+      },
+      orderBy: {
+        nombre: "asc",
+      },
+    });
 
     res.json(subcategorias);
   } catch (error) {
     console.error(error);
 
     res.status(500).json({
-      error:
-        "Error obteniendo subcategorías",
+      error: "Error obteniendo subcategorías",
     });
   }
 };
