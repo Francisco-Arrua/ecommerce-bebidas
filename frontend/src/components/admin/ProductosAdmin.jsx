@@ -555,7 +555,7 @@ export default function ProductosAdmin() {
           </select>
 
           <div style={{ flex: 1, minWidth: "250px", position: "relative", display: "flex", alignItems: "center" }}>
-            <input type="text" placeholder="Buscar producto por nombre, marca o categoría..." value={busqueda} onChange={(e) => e.target.value} style={{ ...inputEstiloBase, width: "100%" }} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
+            <input type="text" placeholder="Buscar producto por nombre, marca o categoría..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} style={{ ...inputEstiloBase, width: "100%" }} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
           </div>
 
           <select value={categoriaFiltro} onChange={(e) => { setCategoriaFiltro(e.target.value); setSubcategoriaFiltro(""); }} style={{ ...inputEstiloBase, minWidth: "180px" }} onFocus={manejarFocusInput} onBlur={manejarBlurInput}>
