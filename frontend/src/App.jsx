@@ -20,12 +20,14 @@ import RutaAdmin from "./components/RutaAdmin";
 import ColeccionesAdmin from "./components/admin/ColeccionesAdmin";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext"; 
+import ScrollToTop from "./components/ScrollToTop";
 
 function App() {
   return (
     <AuthProvider>
       <CartProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             {/* RUTAS PÚBLICAS ESTÁTICAS */}
             <Route path="/" element={<Home />} />

@@ -207,7 +207,7 @@ export default function BannerAdmin() {
       {/* Encabezado */}
       <header style={{ marginBottom: "28px" }}>
         <h1 style={{ fontSize: "28px", fontWeight: 800, margin: 0, color: "#0f172a", letterSpacing: "-0.03em" }}>
-          Publicidades
+          Anuncios & Publicidades
         </h1>
         <p style={{ margin: "6px 0 0 0", color: "#64748b", fontSize: "14px", fontWeight: 500 }}>
           Crea y administra las ofertas dinámicas en el carrusel de tu tienda.
@@ -227,7 +227,7 @@ export default function BannerAdmin() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               )}
             </span>
-            {bannerEditando ? "Editar Promoción" : "Nueva Promoción"}
+            {bannerEditando ? "Editar Anuncio" : "Nuevo Anuncio"}
           </h2>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -443,7 +443,7 @@ export default function BannerAdmin() {
         {/* COLUMNA DERECHA: Lista */}
         <div>
           <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 24px 0", color: "#0f172a", display: "flex", alignItems: "center", gap: "10px" }}>
-            <span>Banners Registrados</span>
+            <span>Anuncios Registrados</span>
             <span style={{ fontSize: "12px", background: "rgba(59, 130, 246, 0.11)", padding: "4px 10px", borderRadius: "20px", color: "#2563eb", fontWeight: 700 }}>
               {banners.length}
             </span>

@@ -191,7 +191,7 @@ export default function PaginasAdmin() {
       {/* Encabezado integrado */}
       <header style={{ marginBottom: "28px" }}>
         <h1 style={{ fontSize: "26px", fontWeight: 800, margin: 0, color: "#0a0a0a", letterSpacing: "-0.03em" }}>
-          Gestión de Páginas
+          Gestión de Secciones
         </h1>
         <p style={{ margin: "6px 0 0 0", color: "#64748b", fontSize: "14px", fontWeight: 500 }}>
           Crea, edita y organiza las secciones dinámicas de tu sitio web.
