@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-// import imageCompression from "browser-image-compression";
+import imageCompression from "browser-image-compression";
 
 export default function HeroAdmin() {
   const [slides, setSlides] = useState([]);
@@ -156,8 +156,7 @@ export default function HeroAdmin() {
          COMPRESIÓN DE IMÁGENES
          Para volver a activar la compresión en el futuro, descomentá este bloque
          y usá "archivoProcesado" en el FormData en lugar de "archivo".
-         ======================================================================= */
-      
+         ======================================================================= */    
       const opcionesCompresion = {
         maxSizeMB: 0.3,            // Máximo 300 KB
         maxWidthOrHeight: 1920,    // Redimensionar a Full HD
@@ -168,8 +167,7 @@ export default function HeroAdmin() {
       const archivoProcesado = await imageCompression(archivo, opcionesCompresion);
       console.log(`Tamaño comprimido: ${(archivoProcesado.size / 1024 / 1024).toFixed(2)} MB`);
 
-      // Actualmente sube el archivo original para mantener el 100% de la calidad visual
-      const archivoParaSubir = archivoProcesado; // <-- Si descomentás lo de arriba, cambiá "archivo" por "archivoProcesado"
+      const archivoParaSubir = archivoProcesado;
 
       const formDataImagen = new FormData();
       formDataImagen.append("file", archivoParaSubir);
