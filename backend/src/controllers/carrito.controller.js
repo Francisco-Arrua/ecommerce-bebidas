@@ -1,107 +1,180 @@
 import { prisma } from "../db/prisma.js";
 
+// Helper para calcular stock dinámico del producto si tiene talles
+const formatearProducto = (producto) => {
+  if (!producto) return null;
+
+  const stockTotal =
+    producto.tieneTalles && Array.isArray(producto.talles)
+      ? producto.talles.reduce((acc, t) => acc + Number(t.stock || 0), 0)
+      : producto.stock;
+
+  return {
+    ...producto,
+    stock: stockTotal,
+  };
+};
+
+// Helper para formatear un item individual del carrito
+const formatearItem = (item) => ({
+  ...item,
+  producto: formatearProducto(item.producto),
+  subtotal: Number(item.producto.precio) * item.cantidad,
+});
+
+// Helper para devolver la estructura completa del carrito con totales
+const obtenerCarritoEstructurado = async (usuarioId) => {
+  const carrito = await prisma.carrito.findUnique({
+    where: { usuarioId },
+    include: {
+      items: {
+        include: {
+          producto: {
+            include: {
+              imagenes: { orderBy: { orden: "asc" } },
+              categoria: true,
+              subcategoria: true,
+              talles: true,
+            },
+          },
+          talle: true,
+        },
+        orderBy: { id: "asc" },
+      },
+    },
+  });
+
+  if (!carrito) {
+    return { id: null, usuarioId, items: [], totalItems: 0, total: 0 };
+  }
+
+  const itemsEstructurados = carrito.items.map(formatearItem);
+  const total = itemsEstructurados.reduce((acc, i) => acc + i.subtotal, 0);
+  const totalItems = itemsEstructurados.reduce((acc, i) => acc + i.cantidad, 0);
+
+  return {
+    id: carrito.id,
+    usuarioId: carrito.usuarioId,
+    items: itemsEstructurados,
+    totalItems,
+    total,
+  };
+};
+
 export const agregarProducto = async (req, res) => {
   try {
-    const { productoId, cantidad } = req.body;
-
-    const usuarioId = req.usuario.id;
-
+    const { productoId, cantidad, talleId } = req.body;
+    const usuarioId = Number(req.usuario.id);
     const cantidadAAgregar = Number(cantidad);
 
-    if (cantidadAAgregar <= 0) {
+    if (isNaN(cantidadAAgregar) || cantidadAAgregar <= 0) {
       return res.status(400).json({ mensaje: "La cantidad debe ser mayor a 0" });
     }
 
-    // 1. Verificar que exista el producto y traer su stock
+    // 1. Verificar existencia del producto y sus talles
     const producto = await prisma.producto.findUnique({
       where: { id: Number(productoId) },
+      include: { talles: true },
     });
 
     if (!producto) {
       return res.status(404).json({ mensaje: "Producto no encontrado" });
     }
 
-    // 2. Buscar o crear el carrito del usuario
-    let carrito = await prisma.carrito.findUnique({
-      where: { usuarioId },
-    });
-
-    if (!carrito) {
-      carrito = await prisma.carrito.create({
-        data: { usuarioId: Number(usuarioId) },
-      });
+    if (!producto.activo) {
+      return res.status(400).json({ mensaje: "El producto no está disponible" });
     }
 
-    // 3. Buscar si el producto ya está en el carrito
+    // 2. Validar selección de talle según la configuración del producto
+    let talleSeleccionado = null;
+    let stockDisponible = producto.stock;
+
+    if (producto.tieneTalles) {
+      if (!talleId) {
+        return res.status(400).json({ mensaje: "Debés seleccionar un talle para este producto" });
+      }
+
+      talleSeleccionado = producto.talles.find((t) => t.id === Number(talleId));
+
+      if (!talleSeleccionado) {
+        return res.status(400).json({ mensaje: "El talle seleccionado no pertenece a este producto" });
+      }
+
+      stockDisponible = talleSeleccionado.stock;
+    }
+
+    // 3. Obtener o crear carrito atómicamente (evita race condition)
+    const carrito = await prisma.carrito.upsert({
+      where: { usuarioId },
+      update: {},
+      create: { usuarioId },
+    });
+
+    // 4. Buscar si ya existe la combinación (Producto + Talle) en el carrito
     const itemExistente = await prisma.itemCarrito.findFirst({
       where: {
         carritoId: carrito.id,
         productoId: Number(productoId),
+        talleId: talleId ? Number(talleId) : null,
       },
     });
 
-    // 4. Calcular cuánto tendría en total en base a lo que ya hay en el carrito
-    const cantidadActual = itemExistente ? itemExistente.cantidad : 0;
-    const cantidadTotalDeseada = cantidadActual + cantidadAAgregar;
+    const cantidadActualEnCarrito = itemExistente ? itemExistente.cantidad : 0;
+    const cantidadTotalDeseada = cantidadActualEnCarrito + cantidadAAgregar;
 
-    // 5. VALIDACIÓN DE STOCK
-    if (cantidadTotalDeseada > producto.stock) {
+    // 5. Validar contra el stock específico
+    if (cantidadTotalDeseada > stockDisponible) {
+      const detalleTalle = talleSeleccionado ? ` (Talle ${talleSeleccionado.talle})` : "";
       return res.status(400).json({
-        mensaje: `Stock insuficiente. Disponible: ${producto.stock}. Ya tenés ${cantidadActual} en el carrito e intentás sumar ${cantidadAAgregar}.`,
+        mensaje: `Stock insuficiente${detalleTalle}. Disponible: ${stockDisponible}. En carrito: ${cantidadActualEnCarrito}. Intenta agregar: ${cantidadAAgregar}.`,
       });
     }
 
-    // 6. Si el stock es suficiente, actualizamos o creamos
+    // 6. Actualizar o crear el ítem en el carrito
     if (itemExistente) {
-      const itemActualizado = await prisma.itemCarrito.update({
+      await prisma.itemCarrito.update({
         where: { id: itemExistente.id },
         data: { cantidad: cantidadTotalDeseada },
       });
-
-      return res.json({
-        mensaje: "Cantidad actualizada en el carrito",
-        item: itemActualizado,
+    } else {
+      await prisma.itemCarrito.create({
+        data: {
+          carritoId: carrito.id,
+          productoId: Number(productoId),
+          talleId: talleId ? Number(talleId) : null,
+          cantidad: cantidadAAgregar,
+        },
       });
     }
 
-    // Si no existía el ítem, lo creamos de cero
-    const item = await prisma.itemCarrito.create({
-      data: {
-        carritoId: carrito.id,
-        productoId: Number(productoId),
-        cantidad: cantidadAAgregar,
-      },
-    });
+    // Devuelve el carrito completo estructurado con totales
+    const carritoActualizado = await obtenerCarritoEstructurado(usuarioId);
 
     res.status(201).json({
-      mensaje: "Producto agregado al carrito",
-      item,
+      mensaje: itemExistente ? "Cantidad actualizada en el carrito" : "Producto agregado al carrito",
+      carrito: carritoActualizado,
     });
-
   } catch (error) {
-    console.error(error);
+    console.error("Error agregando al carrito:", error);
     res.status(500).json({ mensaje: "Error agregando producto al carrito" });
   }
 };
 
 export const actualizarCantidad = async (req, res) => {
-  const usuarioId = req.usuario.id;
   try {
-    const { id } = req.params; // id del ItemCarrito
-    const { cantidad } = req.body;
-    const nuevaCantidad = Number(cantidad);
+    const usuarioId = Number(req.usuario.id);
+    const { id } = req.params; // ID del itemCarrito
+    const nuevaCantidad = Number(req.body.cantidad);
 
-    if (nuevaCantidad <= 0) {
+    if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
       return res.status(400).json({ mensaje: "La cantidad debe ser mayor a cero" });
     }
 
-    // 1. Buscar el ítem de manera única e incluir la info del producto relacionado
     const itemExistente = await prisma.itemCarrito.findUnique({
-      where: {
-        id: Number(id),
-      },
+      where: { id: Number(id) },
       include: {
         producto: true,
+        talle: true,
         carrito: true,
       },
     });
@@ -110,166 +183,106 @@ export const actualizarCantidad = async (req, res) => {
       return res.status(404).json({ mensaje: "El ítem del carrito no existe" });
     }
 
-    if (itemExistente.carrito.usuarioId !== usuarioId) {
-        return res.status(403).json({
-            mensaje: "No tenés permiso para modificar este carrito."
-        });
+    if (Number(itemExistente.carrito.usuarioId) !== usuarioId) {
+      return res.status(403).json({ mensaje: "No tenés permiso para modificar este carrito." });
     }
 
-    // 2. VALIDACIÓN DE STOCK
-    if (nuevaCantidad > itemExistente.producto.stock) {
+    // Determinar stock límite (Talle o Producto)
+    let stockMaximo = itemExistente.producto.stock;
+    if (itemExistente.talle) {
+      stockMaximo = itemExistente.talle.stock;
+    }
+
+    if (nuevaCantidad > stockMaximo) {
       return res.status(400).json({
-        mensaje: `No podés seleccionar esa cantidad. El stock disponible de ${itemExistente.producto.nombre} es ${itemExistente.producto.stock}.`,
+        mensaje: `Stock insuficiente. El máximo disponible para ${itemExistente.producto.nombre}${
+          itemExistente.talle ? ` (${itemExistente.talle.talle})` : ""
+        } es ${stockMaximo}.`,
       });
     }
 
-    // 3. Modificar la cantidad de la línea
-    const itemActualizado = await prisma.itemCarrito.update({
+    await prisma.itemCarrito.update({
       where: { id: Number(id) },
       data: { cantidad: nuevaCantidad },
-      include: { producto: true  }
     });
+
+    const carritoActualizado = await obtenerCarritoEstructurado(usuarioId);
 
     res.json({
       mensaje: "Cantidad modificada correctamente",
-      item: itemActualizado,
+      carrito: carritoActualizado,
     });
-
   } catch (error) {
-    console.error(error);
+    console.error("Error al actualizar cantidad:", error);
     res.status(500).json({ mensaje: "Error al actualizar la cantidad" });
   }
 };
 
 export const getCarrito = async (req, res) => {
   try {
-    const usuarioId = req.usuario.id;
-
-    const carrito = await prisma.carrito.findUnique({
-      where: {
-        usuarioId: Number(usuarioId),
-      },
-
-      include: {
-        items: {
-          include: {
-            producto: {
-              include: {
-                imagenes: {
-                  orderBy: {
-                    orden: "asc",
-                  },
-                },
-
-                categoria: true,
-                subcategoria: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!carrito) {
-      return res.status(404).json({
-        mensaje: "El usuario no tiene carrito",
-      });
-    }
+    const usuarioId = Number(req.usuario.id);
+    const carrito = await obtenerCarritoEstructurado(usuarioId);
 
     res.json(carrito);
-
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      mensaje: "Error obteniendo carrito",
-    });
+    console.error("Error obteniendo carrito:", error);
+    res.status(500).json({ mensaje: "Error obteniendo carrito" });
   }
 };
 
-
 export const eliminarProducto = async (req, res) => {
   try {
-    const { id } = req.params; // El id del ItemCarrito
-
-    const usuarioId = req.usuario.id;
+    const { id } = req.params;
+    const usuarioId = Number(req.usuario.id);
 
     const itemExistente = await prisma.itemCarrito.findUnique({
-        where:{
-            id:Number(id)
-        },
-        include:{
-            carrito:true
-        }
-    })
+      where: { id: Number(id) },
+      include: { carrito: true },
+    });
 
     if (!itemExistente) {
-      return res.status(404).json({
-        mensaje: "El ítem no existe en el carrito",
-      });
+      return res.status(404).json({ mensaje: "El ítem no existe en el carrito" });
     }
 
-    if (itemExistente.carrito.usuarioId !== usuarioId) {
-        return res.status(403).json({
-            mensaje: "No tenés permiso para modificar este carrito."
-        });
+    if (Number(itemExistente.carrito.usuarioId) !== usuarioId) {
+      return res.status(403).json({ mensaje: "No tenés permiso para modificar este carrito." });
     }
 
-    // Eliminar el ítem
     await prisma.itemCarrito.delete({
-      where: {
-        id: Number(id),
-      },
+      where: { id: Number(id) },
     });
+
+    const carritoActualizado = await obtenerCarritoEstructurado(usuarioId);
 
     res.json({
       mensaje: "Producto eliminado del carrito correctamente",
+      carrito: carritoActualizado,
     });
-
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      mensaje: "Error al eliminar el producto del carrito",
-    });
+    console.error("Error al eliminar item del carrito:", error);
+    res.status(500).json({ mensaje: "Error al eliminar el producto del carrito" });
   }
 };
 
 export const vaciarCarrito = async (req, res) => {
   try {
-    const usuarioId = req.usuario.id;
+    const usuarioId = Number(req.usuario.id);
 
-    if (!usuarioId) {
-      return res.status(400).json({
-        mensaje: "El id del usuario es requerido",
-      });
-    }
-
-    // Buscar el carrito de ese usuario
     const carrito = await prisma.carrito.findUnique({
       where: { usuarioId },
     });
 
     if (!carrito) {
-      return res.status(404).json({
-        mensaje: "No se encontró un carrito para este usuario",
-      });
+      return res.status(404).json({ mensaje: "No se encontró un carrito para este usuario" });
     }
 
-    // Borrar todos los items asociados a ese carritoId
     await prisma.itemCarrito.deleteMany({
-      where: {
-        carritoId: carrito.id,
-      },
+      where: { carritoId: carrito.id },
     });
 
-    res.json({
-      mensaje: "Carrito vaciado por completo",
-    });
-
+    res.json({ mensaje: "Carrito vaciado por completo" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      mensaje: "Error al vaciar el carrito",
-    });
+    console.error("Error al vaciar carrito:", error);
+    res.status(500).json({ mensaje: "Error al vaciar el carrito" });
   }
 };

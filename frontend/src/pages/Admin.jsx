@@ -10,6 +10,8 @@ import BannerAdmin from "../components/admin/BannerAdmin";
 import NavbarAdmin from "../components/admin/NavbarAdmin";
 import Clientes from "../components/admin/Clientes";
 import ColeccionesAdmin from "../components/admin/ColeccionesAdmin";
+import CredencialesMP from "../components/admin/CredencialesMPAdmin";
+import PedidosAdmin from "../components/admin/PedidosAdmin";
 
 import { useEffect, useState } from "react";
 
@@ -77,6 +79,8 @@ export default function Admin() {
           {seccion === "configuracion" && <ConfiguracionAdmin />}
           {seccion === "paginas" && <PaginasAdmin />}
           {seccion === "clientes" && <Clientes />}
+          {seccion === "credenciales" && <CredencialesMP />}
+          {seccion === "pedidos" && <PedidosAdmin />}
         </div>
       </div>
     </div>

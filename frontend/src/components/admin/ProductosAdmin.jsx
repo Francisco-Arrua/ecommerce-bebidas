@@ -5,6 +5,11 @@ const MAX_IMAGENES = 8;
 const API_URL = import.meta.env.VITE_API_URL;
 const UPLOAD_ENDPOINT = `${API_URL}/upload`;
 
+const obtenerHeadersAdmin = () => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("token")}`,
+});
+
 export default function ProductosAdmin() {
   const [editandoId, setEditandoId] = useState(null);
   const [busqueda, setBusqueda] = useState("");
@@ -28,7 +33,11 @@ export default function ProductosAdmin() {
     subcategoriaId: "",
     precio: "",
     stock: "",
+    tieneTalles: false,
+    activo: true,
+    destacado: false,
   });
+  const [tallesNuevos, setTallesNuevos] = useState([]);
 
   const [editForm, setEditForm] = useState({
     nombre: "",
@@ -38,6 +47,10 @@ export default function ProductosAdmin() {
     subcategoriaId: "",
     precio: "",
     stock: "",
+    tieneTalles: false,
+    activo: true,
+    destacado: false,
+    talles: [],
     imagenes: [], 
   });
 
@@ -115,6 +128,35 @@ export default function ProductosAdmin() {
 
     e.target.value = "";
   };
+
+  const definirImagenPrincipal = (indice, esEdicion = false) => {
+    const actualizar = (imagenes) => imagenes.map((imagen, index) => ({
+      ...imagen,
+      principal: index === indice,
+    }));
+
+    if (esEdicion) {
+      setEditForm((prev) => ({ ...prev, imagenes: actualizar(prev.imagenes) }));
+    } else {
+      setImagenesSubidas(actualizar);
+    }
+  };
+
+  const eliminarImagenIndividual = (indice, esEdicion = false) => {
+    const eliminar = (imagenes) => {
+      const restantes = imagenes.filter((_, index) => index !== indice);
+      if (restantes.length > 0 && !restantes.some((imagen) => imagen.principal)) {
+        restantes[0] = { ...restantes[0], principal: true };
+      }
+      return restantes;
+    };
+
+    if (esEdicion) {
+      setEditForm((prev) => ({ ...prev, imagenes: eliminar(prev.imagenes) }));
+    } else {
+      setImagenesSubidas(eliminar);
+    }
+  };
   // ==========================================
   // EFECTOS Y PETICIONES API
   // ==========================================
@@ -147,17 +189,41 @@ export default function ProductosAdmin() {
   }, []);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    const { name, type, checked, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleEditChange = (e) => {
-    setEditForm((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    const { name, type, checked, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+  };
+
+  const agregarTalle = (esEdicion = false) => {
+    if (esEdicion) {
+      setEditForm((prev) => ({ ...prev, talles: [...prev.talles, { talle: "", stock: 0 }] }));
+      return;
+    }
+    setTallesNuevos((prev) => [...prev, { talle: "", stock: 0 }]);
+  };
+
+  const actualizarTalle = (indice, campo, valor, esEdicion = false) => {
+    const actualizar = (talles) => talles.map((talle, index) => (
+      index === indice ? { ...talle, [campo]: campo === "stock" ? valor : valor } : talle
+    ));
+
+    if (esEdicion) {
+      setEditForm((prev) => ({ ...prev, talles: actualizar(prev.talles) }));
+    } else {
+      setTallesNuevos(actualizar);
+    }
+  };
+
+  const eliminarTalle = (indice, esEdicion = false) => {
+    if (esEdicion) {
+      setEditForm((prev) => ({ ...prev, talles: prev.talles.filter((_, index) => index !== indice) }));
+    } else {
+      setTallesNuevos((prev) => prev.filter((_, index) => index !== indice));
+    }
   };
 
   const productosFiltradosYOrdenados = useMemo(() => {
@@ -219,13 +285,19 @@ export default function ProductosAdmin() {
     try {
       const res = await fetch(`${API_URL}/productos`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: obtenerHeadersAdmin(),
         body: JSON.stringify({
           ...formData,
           precio: Number(formData.precio),
           stock: Number(formData.stock),
           categoriaId: formData.categoriaId ? Number(formData.categoriaId) : null,
           subcategoriaId: formData.subcategoriaId ? Number(formData.subcategoriaId) : null,
+          tieneTalles: formData.tieneTalles,
+          activo: formData.activo,
+          destacado: formData.destacado,
+          talles: tallesNuevos
+            .filter((talle) => talle.talle.trim())
+            .map((talle) => ({ talle: talle.talle.trim(), stock: Number(talle.stock) })),
           imagenes: imagenesSubidas, 
         }),
       });
@@ -240,9 +312,13 @@ export default function ProductosAdmin() {
         subcategoriaId: "",
         precio: "",
         stock: "",
+        tieneTalles: false,
+        activo: true,
+        destacado: false,
       });
 
       setImagenesSubidas([]);
+      setTallesNuevos([]);
       obtenerProductos();
     } catch (error) {
       console.error(error);
@@ -252,7 +328,10 @@ export default function ProductosAdmin() {
   const eliminarProducto = async (id) => {
     if (!confirm("¿Eliminar producto?")) return;
     try {
-      await fetch(`${API_URL}/productos/${id}`, { method: "DELETE" });
+      await fetch(`${API_URL}/productos/${id}`, {
+        method: "DELETE",
+        headers: obtenerHeadersAdmin(),
+      });
       obtenerProductos();
     } catch (error) {
       console.error(error);
@@ -269,6 +348,10 @@ export default function ProductosAdmin() {
       subcategoriaId: producto.subcategoriaId || "",
       precio: producto.precio || "",
       stock: producto.stock || "",
+      tieneTalles: Boolean(producto.tieneTalles),
+      activo: producto.activo !== false,
+      destacado: Boolean(producto.destacado),
+      talles: producto.talles?.map((talle) => ({ talle: talle.talle, stock: talle.stock })) || [],
       imagenes: producto.imagenes || [], 
     });
   };
@@ -277,13 +360,20 @@ export default function ProductosAdmin() {
     try {
       await fetch(`${API_URL}/productos/${editandoId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: obtenerHeadersAdmin(),
         body: JSON.stringify({
           ...editForm,
           precio: Number(editForm.precio),
           stock: Number(editForm.stock),
           categoriaId: editForm.categoriaId ? Number(editForm.categoriaId) : null,
           subcategoriaId: editForm.subcategoriaId ? Number(editForm.subcategoriaId) : null,
+          tieneTalles: editForm.tieneTalles,
+          activo: editForm.activo,
+          destacado: editForm.destacado,
+          talles: editForm.talles
+            .filter((talle) => talle.talle.trim())
+            .map((talle) => ({ talle: talle.talle.trim(), stock: Number(talle.stock) })),
+          imagenes: editForm.imagenes,
         }),
       });
 
@@ -294,13 +384,26 @@ export default function ProductosAdmin() {
     }
   };
 
-  const modificarStock = async (id, stockActual, cambio) => {
+  const modificarStock = async (producto, cambio) => {
     try {
-      await fetch(`${API_URL}/productos/${id}/stock`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+      if (producto.tieneTalles) return;
+
+      await fetch(`${API_URL}/productos/${producto.id}`, {
+        method: "PUT",
+        headers: obtenerHeadersAdmin(),
         body: JSON.stringify({
-          stock: Math.max(0, stockActual + cambio),
+          nombre: producto.nombre,
+          descripcion: producto.descripcion,
+          marca: producto.marca,
+          categoriaId: producto.categoriaId,
+          subcategoriaId: producto.subcategoriaId,
+          precio: Number(producto.precio),
+          stock: Math.max(0, Number(producto.stock) + cambio),
+          tieneTalles: false,
+          activo: producto.activo,
+          destacado: producto.destacado,
+          talles: [],
+          imagenes: producto.imagenes || [],
         }),
       });
       obtenerProductos();
@@ -311,7 +414,10 @@ export default function ProductosAdmin() {
 
   const cambiarActivo = async (id) => {
     try {
-      await fetch(`${API_URL}/productos/${id}/activo`, { method: "PATCH" });
+      await fetch(`${API_URL}/productos/activo/${id}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
       obtenerProductos();
     } catch (error) {
       console.error(error);
@@ -320,7 +426,10 @@ export default function ProductosAdmin() {
 
   const cambiarDestacado = async (id) => {
     try {
-      await fetch(`${API_URL}/productos/${id}/destacado`, { method: "PATCH" });
+      await fetch(`${API_URL}/productos/destacado/${id}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
       obtenerProductos();
     } catch (error) {
       console.error(error);
@@ -457,6 +566,30 @@ export default function ProductosAdmin() {
     );
   };
 
+  const EditorTalles = ({ talles, esEdicion = false }) => (
+    <div style={{ gridColumn: "1 / -1", padding: "16px", borderRadius: "14px", background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+        <div>
+          <label style={{ fontSize: "13px", fontWeight: 700, color: "#475569", display: "block" }}>Talles y stock</label>
+          <span style={{ fontSize: "12px", color: "#64748b" }}>Agregá cada talle con su stock disponible.</span>
+        </div>
+        <button type="button" onClick={() => agregarTalle(esEdicion)} style={{ ...botonAccionEstilo, color: "#2563eb", borderColor: "#bfdbfe" }}>
+          + Agregar talle
+        </button>
+      </div>
+      {talles.length === 0 && <p style={{ margin: 0, fontSize: "12px", color: "#94a3b8" }}>Todavía no hay talles cargados.</p>}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        {talles.map((talle, indice) => (
+          <div key={`${talle.id || "nuevo"}-${indice}`} style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "8px", alignItems: "center" }}>
+            <input value={talle.talle} onChange={(e) => actualizarTalle(indice, "talle", e.target.value, esEdicion)} placeholder="Ej. M" style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
+            <input type="number" min="0" value={talle.stock} onChange={(e) => actualizarTalle(indice, "stock", e.target.value, esEdicion)} placeholder="Stock" style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
+            <button type="button" onClick={() => eliminarTalle(indice, esEdicion)} style={{ ...botonAccionEstilo, color: "#ef4444", borderColor: "#fecaca" }}>Quitar</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ minHeight: "100vh", padding: "24px 16px 40px 16px", fontFamily: "Inter, sans-serif", backgroundColor: "#f8fafc" }}>
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
@@ -519,7 +652,15 @@ export default function ProductosAdmin() {
             </select>
 
             <input name="precio" type="number" placeholder="Precio ($)" value={formData.precio} onChange={handleChange} required style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
-            <input name="stock" type="number" placeholder="Stock inicial" value={formData.stock} onChange={handleChange} required style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
+            {!formData.tieneTalles && <input name="stock" type="number" min="0" placeholder="Stock inicial" value={formData.stock} onChange={handleChange} required style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />}
+
+            <div style={{ gridColumn: "1 / -1", display: "flex", gap: "18px", flexWrap: "wrap", alignItems: "center" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#475569", fontWeight: 700 }}><input type="checkbox" name="tieneTalles" checked={formData.tieneTalles} onChange={handleChange} /> Producto con talles</label>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#475569", fontWeight: 700 }}><input type="checkbox" name="activo" checked={formData.activo} onChange={handleChange} /> Activo</label>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#475569", fontWeight: 700 }}><input type="checkbox" name="destacado" checked={formData.destacado} onChange={handleChange} /> Destacado</label>
+            </div>
+
+            {formData.tieneTalles && <EditorTalles talles={tallesNuevos} />}
             
             <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "10px" }}>
               <label style={{ fontSize: "13px", fontWeight: 700, color: "#475569" }}>Imágenes de Exhibición</label>
@@ -624,8 +765,10 @@ export default function ProductosAdmin() {
                 {/* Controles Laterales */}
                 <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "flex-end", gap: "16px", marginLeft: "auto" }}>
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                    <button onClick={() => modificarStock(producto.id, producto.stock, -1)} style={botonAccionEstilo} onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff"}>-1 Stock</button>
-                    <button onClick={() => modificarStock(producto.id, producto.stock, 1)} style={botonAccionEstilo} onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff"}>+1 Stock</button>
+                    {!producto.tieneTalles && <>
+                      <button onClick={() => modificarStock(producto, -1)} style={botonAccionEstilo} onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff"}>-1 Stock</button>
+                      <button onClick={() => modificarStock(producto, 1)} style={botonAccionEstilo} onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff"}>+1 Stock</button>
+                    </>}
                     <button onClick={() => cambiarActivo(producto.id)} style={{ ...botonAccionEstilo, borderColor: producto.activo ? "#e2e8f0" : "#3b82f6", color: producto.activo ? "#475569" : "#3b82f6" }}>{producto.activo ? "Desactivar" : "Activar"}</button>
                     <button onClick={() => cambiarDestacado(producto.id)} style={{ ...botonAccionEstilo, color: producto.destacado ? "#eab308" : "#475569" }}>{producto.destacado ? "★ Destacado" : "☆ Destacar"}</button>
                   </div>
@@ -666,7 +809,15 @@ export default function ProductosAdmin() {
                     </select>
 
                     <input name="precio" type="number" value={editForm.precio} onChange={handleEditChange} placeholder="Precio" style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
-                    <input name="stock" type="number" value={editForm.stock} onChange={handleEditChange} placeholder="Stock" style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
+                    {!editForm.tieneTalles && <input name="stock" type="number" min="0" value={editForm.stock} onChange={handleEditChange} placeholder="Stock" style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />}
+
+                    <div style={{ gridColumn: "1 / -1", display: "flex", gap: "18px", flexWrap: "wrap", alignItems: "center" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#475569", fontWeight: 700 }}><input type="checkbox" name="tieneTalles" checked={editForm.tieneTalles} onChange={handleEditChange} /> Producto con talles</label>
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#475569", fontWeight: 700 }}><input type="checkbox" name="activo" checked={editForm.activo} onChange={handleEditChange} /> Activo</label>
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#475569", fontWeight: 700 }}><input type="checkbox" name="destacado" checked={editForm.destacado} onChange={handleEditChange} /> Destacado</label>
+                    </div>
+
+                    {editForm.tieneTalles && <EditorTalles talles={editForm.talles} esEdicion />}
                     
                     <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
                       <label style={{ fontSize: "13px", fontWeight: 700, color: "#475569" }}>Cargar nuevas imágenes al producto</label>

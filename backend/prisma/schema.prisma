@@ -7,188 +7,328 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Producto {
-  id          Int     @id @default(autoincrement())
-  nombre      String
-  descripcion String?
-  precio      Decimal
-  stock       Int     @default(0)
-  marca       String?
-
-  categoriaId Int?
-  categoria   Categoria? @relation(fields: [categoriaId], references: [id])
-
-  subcategoriaId Int?
-  subcategoria   Subcategoria? @relation(fields: [subcategoriaId], references: [id])
-
-  imagenes ImagenProducto[]
-
-  itemsCarrito ItemCarrito[]
-
-  activo    Boolean @default(true)
-  destacado Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
-
-  colecciones Coleccion[]
-}
-
-model ImagenProducto {
-  id Int @id @default(autoincrement())
-
-  url String
-
-  principal Boolean @default(false)
-
-  orden Int @default(0)
-
-  productoId Int
-  producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
-}
-
-model Categoria {
-  id     Int    @id @default(autoincrement())
-  nombre String @unique
-
-  productos      Producto[]
-  subcategorias  Subcategoria[]
-}
-
-model Subcategoria {
-  id     Int    @id @default(autoincrement())
-  nombre String
-
-  categoriaId Int
-  categoria   Categoria @relation(fields: [categoriaId], references: [id])
-
-  productos Producto[]
-}
-
-model HeroSlide {
-  id Int @id @default(autoincrement())
-
-  titulo String
-  subtitulo String?
-
-  textoBoton String?
-  linkBoton String?
-
-  imagen String?
-
-  activo Boolean @default(true)
-
-  orden Int @default(0)
-
-  createdAt DateTime @default(now())
-}
-
-model Configuracion {
-  id Int @id @default(1)
-
-  nombreTienda String? @default("Mi Tienda")
-
-  whatsapp String?
-  instagram String?
-  facebook String?
-}
-
-model PaginaContenido {
-  id Int @id @default(autoincrement())
-
-  slug String @unique
-
-  titulo String
-  contenido String
-
-  imagen String?
-
-  visibleEnMenu Boolean @default(true)
-
-  orden Int @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Banner {
-  id Int @id @default(autoincrement())
-
-  titulo String?
-  subtitulo String?
-
-  imagen String?
-
-  colorInicio String @default("#0f2a4a")
-  colorFin String @default("#2563eb")
-
-  activo Boolean @default(true)
-
-  orden Int @default(0)
-
-  createdAt DateTime @default(now())
-}
-
-model Usuario {
-  id        Int     @id @default(autoincrement())
-  nombre    String
-  email     String  @unique
-  password  String
-
-  rol Rol @default(CLIENTE)
-
-  creadoEn DateTime @default(now())
-
-  carrito Carrito?
-
-  resetPasswordToken   String?
-  resetPasswordExpires DateTime?
-}
-
-model Carrito {
-  id Int @id @default(autoincrement())
-
-  usuarioId Int @unique
-  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-
-  items ItemCarrito[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ItemCarrito {
-  id Int @id @default(autoincrement())
-
-  carritoId Int
-  carrito Carrito @relation(fields: [carritoId], references: [id], onDelete: Cascade)
-
-  productoId Int
-  producto Producto @relation(fields: [productoId], references: [id])
-
-  cantidad Int @default(1)
-}
-
-
-model Coleccion {
-  id          Int      @id @default(autoincrement())
-  nombre      String
-  subtitulo   String?  // Acá va el gancho comercial, ej: "20% OFF" o "Llevá el conjunto"
-  descripcion String?  // Explicación de la promo
-  imagen      String?  // La carátula que se va a ver en la grilla de promociones
-  
-  activo      Boolean  @default(true)
-  orden       Int      @default(0)
-  
-  // Relación muchos a muchos implícita con Producto
-  productos   Producto[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
+// ==========================================
+// USUARIOS Y CARRITO
+// ==========================================
 
 enum Rol {
   ADMIN
   CLIENTE
+}
+
+model Usuario {
+  id                   Int       @id @default(autoincrement())
+  nombre               String
+  email                String    @unique
+  password             String
+  rol                  Rol       @default(CLIENTE)
+  creadoEn             DateTime  @default(now())
+
+  carrito              Carrito?
+  ordenes              Orden[]
+
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+
+  @@index([email])
+}
+
+model Carrito {
+  id        Int           @id @default(autoincrement())
+  usuarioId Int           @unique
+  usuario   Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  items     ItemCarrito[]
+
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model ItemCarrito {
+  id         Int           @id @default(autoincrement())
+
+  carritoId  Int
+  carrito    Carrito       @relation(fields: [carritoId], references: [id], onDelete: Cascade)
+
+  productoId Int
+  producto   Producto      @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  talleId    Int?
+  talle      TalleProducto? @relation(fields: [talleId], references: [id], onDelete: SetNull)
+
+  cantidad   Int           @default(1)
+
+  @@index([carritoId])
+}
+
+// ==========================================
+// CATÁLOGO Y PRODUCTOS
+// ==========================================
+
+model Producto {
+  id             Int              @id @default(autoincrement())
+  nombre         String
+  descripcion    String?
+  precio         Decimal          @db.Decimal(12, 2)
+  marca          String?
+
+  // Stock para productos sin talle (accesorios)
+  stock          Int              @default(0)
+  tieneTalles    Boolean          @default(false)
+
+  categoriaId    Int?
+  categoria      Categoria?       @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+
+  subcategoriaId Int?
+  subcategoria   Subcategoria?    @relation(fields: [subcategoriaId], references: [id], onDelete: SetNull)
+
+  imagenes       ImagenProducto[]
+  talles         TalleProducto[]
+  itemsCarrito   ItemCarrito[]
+  itemsOrden     ItemOrden[]
+  colecciones    Coleccion[]
+
+  activo         Boolean          @default(true)
+  destacado      Boolean          @default(false)
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([categoriaId])
+  @@index([subcategoriaId])
+  @@index([activo, destacado])
+}
+
+model TalleProducto {
+  id           Int           @id @default(autoincrement())
+  talle        String        // Ej: "S", "M", "L", "40"
+  stock        Int           @default(0)
+
+  productoId   Int
+  producto     Producto      @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  itemsCarrito ItemCarrito[]
+  itemsOrden   ItemOrden[]
+
+  @@unique([productoId, talle])
+  @@index([productoId])
+}
+
+model ImagenProducto {
+  id         Int      @id @default(autoincrement())
+  url        String
+  principal  Boolean  @default(false)
+  orden      Int      @default(0)
+
+  productoId Int
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@index([productoId])
+}
+
+model Categoria {
+  id            Int            @id @default(autoincrement())
+  nombre        String         @unique
+  productos     Producto[]
+  subcategorias Subcategoria[]
+}
+
+model Subcategoria {
+  id          Int        @id @default(autoincrement())
+  nombre      String
+  categoriaId Int
+  categoria   Categoria  @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  productos   Producto[]
+
+  @@index([categoriaId])
+}
+
+model Coleccion {
+  id          Int        @id @default(autoincrement())
+  nombre      String
+  subtitulo   String?
+  descripcion String?
+  imagen      String?
+  activo      Boolean    @default(true)
+  orden       Int        @default(0)
+
+  productos   Producto[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// ==========================================
+// ÓRDENES, PAGOS Y ENVÍOS
+// ==========================================
+
+enum EstadoOrden {
+  PENDIENTE
+  PAGADO
+  CANCELADO
+}
+
+enum EstadoEnvio {
+  PENDIENTE_DESPACHO
+  ENVIADO
+  ENTREGADO
+}
+
+enum EstadoPago {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+  REEMBOLSADO
+}
+
+model Orden {
+  id                      Int            @id @default(autoincrement())
+  
+  usuarioId               Int
+  usuario                 Usuario        @relation(fields: [usuarioId], references: [id])
+
+  estado                  EstadoOrden    @default(PENDIENTE)
+  estadoEnvio             EstadoEnvio    @default(PENDIENTE_DESPACHO)
+
+  totalProductos          Decimal        @db.Decimal(12, 2)
+  costoEnvio              Decimal        @default(0) @db.Decimal(12, 2)
+  totalGeneral            Decimal        @db.Decimal(12, 2)
+
+  metodoEnvio             String?
+
+  // Tracking de Mercado Pago y Correo
+  mercadoPagoPreferenceId String?
+  codigoSeguimiento       String?
+
+  items                   ItemOrden[]
+  direccion               DireccionEnvio?
+  pagos                   Pago[]         // Historial de intentos de pago (1 a N)
+
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+
+  @@index([usuarioId])
+  @@index([estado])
+  @@index([createdAt])
+}
+
+model ItemOrden {
+  id             Int            @id @default(autoincrement())
+
+  ordenId        Int
+  orden          Orden          @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+
+  productoId     Int?
+  producto       Producto?      @relation(fields: [productoId], references: [id], onDelete: SetNull)
+
+  talleId        Int?
+  talleRelacion  TalleProducto? @relation(fields: [talleId], references: [id], onDelete: SetNull)
+
+  // Snapshots históricos inalterables
+  nombreProducto String
+  imagenUrl      String?        // Snapshot de la imagen principal al comprar
+  talle          String?        // Snapshot de la etiqueta del talle ("M")
+  precioUnitario Decimal        @db.Decimal(12, 2)
+  cantidad       Int
+
+  @@index([ordenId])
+}
+
+model DireccionEnvio {
+  id           Int     @id @default(autoincrement())
+
+  ordenId      Int     @unique
+  orden        Orden   @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+
+  nombreRecibe String
+  telefono     String
+  provincia    String
+  localidad    String
+  codigoPostal String
+  calle        String
+  numero       String
+  pisoDepto    String?
+  aclaraciones String?
+}
+
+model Pago {
+  id           Int        @id @default(autoincrement())
+
+  ordenId      Int
+  orden        Orden      @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+
+  metodoPago   String     @default("MERCADO_PAGO")
+  monto        Decimal    @db.Decimal(12, 2)
+  estado       EstadoPago @default(PENDIENTE)
+  mpPaymentId  String?    @unique // ID único que genera Mercado Pago
+
+  createdAt    DateTime   @default(now())
+
+  @@index([ordenId])
+  @@index([mpPaymentId])
+}
+
+// ==========================================
+// CONFIGURACIÓN DE LA TIENDA Y CMS
+// ==========================================
+
+model OpcionEnvio {
+  id          Int     @id @default(autoincrement())
+  nombre      String
+  costo       Decimal @db.Decimal(12, 2)
+  descripcion String?
+  activo      Boolean @default(true)
+}
+
+model Configuracion {
+  id                     Int      @id @default(1)
+  nombreTienda           String?  @default("Mi Tienda")
+  whatsapp               String?
+  instagram              String?
+  facebook               String?
+  montoMinimoEnvioGratis Decimal? @db.Decimal(12, 2)
+  updatedAt              DateTime @updatedAt
+}
+
+model ConfiguracionPago {
+  id              Int      @id @default(1)
+  mpAccessToken   String?
+  mpPublicKey     String?
+  mpWebhookSecret String?
+  updatedAt       DateTime @updatedAt
+}
+
+model HeroSlide {
+  id         Int      @id @default(autoincrement())
+  titulo     String
+  subtitulo  String?
+  textoBoton String?
+  linkBoton  String?
+  imagen     String?
+  activo     Boolean  @default(true)
+  orden      Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model Banner {
+  id          Int      @id @default(autoincrement())
+  titulo      String?
+  subtitulo   String?
+  imagen      String?
+  colorInicio String   @default("#0f2a4a")
+  colorFin    String   @default("#2563eb")
+  activo      Boolean  @default(true)
+  orden       Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model PaginaContenido {
+  id            Int      @id @default(autoincrement())
+  slug          String   @unique
+  titulo        String
+  contenido     String
+  imagen        String?
+  visibleEnMenu Boolean  @default(true)
+  orden         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

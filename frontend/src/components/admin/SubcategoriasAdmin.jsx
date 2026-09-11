@@ -8,67 +8,99 @@ export default function SubcategoriasAdmin() {
   const [nombre, setNombre] = useState("");
   const [editandoId, setEditandoId] = useState(null);
   const [nombreEditado, setNombreEditado] = useState("");
+  const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState("");
 
   const obtenerCategorias = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/categorias`);
+      if (!res.ok) throw new Error("No se pudieron cargar las categorías");
       const data = await res.json();
+      if (!Array.isArray(data)) throw new Error(data.error || "Respuesta inválida de categorías");
       setCategorias(data);
       if (data.length > 0 && !categoriaId) {
         setCategoriaId(data[0].id);
       }
     } catch (error) {
       console.error(error);
+      throw error;
     }
   };
 
   const obtenerSubcategorias = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/subcategorias`);
+      if (!res.ok) throw new Error("No se pudieron cargar las subcategorías");
       const data = await res.json();
+      if (!Array.isArray(data)) throw new Error(data.error || "Respuesta inválida de subcategorías");
       setSubcategorias(data);
     } catch (error) {
       console.error(error);
+      throw error;
     }
   };
 
   const eliminarSubcategoria = async (id) => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/subcategorias/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/subcategorias/${id}`, {
         method: "DELETE",
       });
+      if (!res.ok) throw new Error("No se pudo eliminar la subcategoría");
       obtenerSubcategorias();
     } catch (error) {
       console.error(error);
+      alert(error.message);
     }
   };
 
   useEffect(() => {
-    obtenerCategorias();
-    obtenerSubcategorias();
+    const cargarDatos = async () => {
+      setCargando(true);
+      setErrorCarga("");
+      try {
+        await Promise.all([obtenerCategorias(), obtenerSubcategorias()]);
+      } catch (error) {
+        console.error(error);
+        setErrorCarga(error.message || "No se pudieron cargar los datos");
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarDatos();
   }, []);
 
   const crearSubcategoria = async () => {
     if (!nombre.trim()) return;
 
-    await fetch(`${import.meta.env.VITE_API_URL}/subcategorias`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        nombre,
-        categoriaId,
-      }),
-    });
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/subcategorias`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nombre: nombre.trim(),
+          categoriaId: Number(categoriaId),
+        }),
+      });
 
-    setNombre("");
-    obtenerSubcategorias();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "No se pudo crear la subcategoría");
+      }
+
+      setNombre("");
+      obtenerSubcategorias();
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+    }
   };
 
   const editarSubcategoria = async (id) => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/subcategorias/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/subcategorias/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -78,11 +110,17 @@ export default function SubcategoriasAdmin() {
         }),
       });
 
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "No se pudo editar la subcategoría");
+      }
+
       setEditandoId(null);
       setNombreEditado("");
       obtenerSubcategorias();
     } catch (error) {
       console.error(error);
+      alert(error.message);
     }
   };
 
@@ -137,13 +175,33 @@ export default function SubcategoriasAdmin() {
     padding: 0
   };
 
-  // Loader Institucional
-  if (categorias.length === 0) {
+  if (cargando) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", fontFamily: "Inter, sans-serif" }}>
         <div style={{ width: "32px", height: "32px", border: "3px solid #e2e8f0", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
         <h3 style={{ marginTop: "16px", color: "#64748b", fontWeight: 500, fontSize: "14px" }}>Cargando administrador...</h3>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (errorCarga) {
+    return (
+      <div style={{ ...estiloTarjetaContenedora, maxWidth: "760px", margin: "40px auto", fontFamily: "Inter, sans-serif" }}>
+        <h3 style={{ margin: 0, color: "#0f172a", fontSize: "16px" }}>No se pudo cargar Subcategorías</h3>
+        <p style={{ margin: 0, color: "#ef4444", fontSize: "14px" }}>{errorCarga}</p>
+        <button type="button" onClick={() => window.location.reload()} style={{ ...botonAccionEstilo, width: "fit-content", padding: "0 16px", color: "#2563eb" }}>
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  if (categorias.length === 0) {
+    return (
+      <div style={{ ...estiloTarjetaContenedora, maxWidth: "760px", margin: "40px auto", fontFamily: "Inter, sans-serif" }}>
+        <h3 style={{ margin: 0, color: "#0f172a", fontSize: "16px" }}>Primero creá una categoría</h3>
+        <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>Las subcategorías necesitan una categoría padre para poder crearse.</p>
       </div>
     );
   }

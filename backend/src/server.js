@@ -17,6 +17,11 @@ import authRoutes from "./routes/auth.routes.js"
 import carritoRoutes from "./routes/carrito.routes.js"
 import clientesRoutes from "./routes/clientes.routes.js";
 import coleccionRoutes from "./routes/coleccion.routes.js";
+import ordenRoutes from "./routes/orden.routes.js";
+import envioRoutes from "./routes/envio.routes.js";
+import pagoRoutes from "./routes/pago.routes.js";
+import configuracionPagoRoutes from "./routes/configuracionpago.routes.js";
+
 const app = express();
 
 app.use(cors());
@@ -36,6 +41,11 @@ app.use("/auth", authRoutes);
 app.use("/carrito", carritoRoutes);
 app.use("/clientes", clientesRoutes);
 app.use("/coleccion", coleccionRoutes);
+app.use("/orden", ordenRoutes);
+app.use("/envio", envioRoutes);
+app.use("/pagos", pagoRoutes);
+app.use("/configuracionpago", configuracionPagoRoutes);
+
 
 const PORT = process.env.PORT || 3000;
 

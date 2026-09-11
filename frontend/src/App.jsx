@@ -8,6 +8,8 @@ import Categoria from "./pages/Categoria";
 import Register from "./pages/Register"; 
 import Login from "./pages/Login";
 import Carrito from "./pages/Carrito";
+import Envio from "./pages/Envio";
+import Pago from "./pages/Pago";
 
 import CambiarPasswordPerfil from "./pages/CambiarPasswordPerfil";
 import SolicitarRecuperacion from "./pages/SolicitarRecuperacion";
@@ -34,7 +36,9 @@ function App() {
             <Route path="/register" element={<Register />} /> 
             <Route path="/login" element={<Login />} />
             <Route path="/carrito" element={<Carrito />} />
-            
+            <Route path="/envio" element={<Envio />} />
+            <Route path="/pago" element={<Pago />} />
+
             <Route path="/perfil/cambiar-password" element={<CambiarPasswordPerfil />} />
             <Route path="/recuperar" element={<SolicitarRecuperacion />} />
             <Route path="/restablecer-password" element={<RestablecerPassword />} />
@@ -52,6 +56,7 @@ function App() {
               <Route path="/admin" element={<Admin />} />
               {/* Protegemos la ruta del ABM de las colecciones aquí adentro */}
               <Route path="/admin/colecciones" element={<ColeccionesAdmin />} />
+
             </Route>
 
           </Routes>

@@ -44,29 +44,42 @@ export const CartProvider = ({ children }) => {
   }, [usuarioId]);
 
   // 2. Agregar producto al carrito
-  const agregarProducto = async (productoId, cantidad) => {
+  // 2. Agregar producto al carrito
+  const agregarProducto = async (productoIdOrItem, cantidadParam) => {
     const token = localStorage.getItem("token");
     if (!usuarioId) return alert("Debes iniciar sesión para agregar productos");
-    
+
+    // Si nos pasan un objeto (como { id, cantidad, talleId }), extraemos los valores
+    let productoId, cantidad, talleId;
+
+    if (typeof productoIdOrItem === "object" && productoIdOrItem !== null) {
+      productoId = productoIdOrItem.id || productoIdOrItem.productoId;
+      cantidad = productoIdOrItem.cantidad;
+      talleId = productoIdOrItem.talleId;
+    } else {
+      productoId = productoIdOrItem;
+      cantidad = cantidadParam;
+    }
+
     try {
       const res = await fetch(`${API_URL}/carrito`, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        body: JSON.stringify({ productoId, cantidad }),
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ productoId, cantidad, talleId }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.mensaje); 
+        alert(data.mensaje || "Error al agregar al carrito"); 
         return false;
       }
 
       await obtenerCarrito();
-      alert(data.mensaje);
+      alert(data.mensaje || "Producto agregado correctamente");
       return true;
     } catch (error) {
       console.error(error);
@@ -79,7 +92,7 @@ export const CartProvider = ({ children }) => {
   const actualizarCantidadItem = async (itemCarritoId, nuevaCantidad) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`${API_URL}/carrito/${itemCarritoId}`, {
+      const res = await fetch(`${API_URL}/carrito/item/${itemCarritoId}`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
@@ -105,7 +118,7 @@ export const CartProvider = ({ children }) => {
   const eliminarProductoItem = async (itemCarritoId) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`${API_URL}/carrito/${itemCarritoId}`, {
+      const res = await fetch(`${API_URL}/carrito/item/${itemCarritoId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -114,6 +127,10 @@ export const CartProvider = ({ children }) => {
 
       if (res.ok) {
         await obtenerCarrito();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        console.error("Error al eliminar item:", data.mensaje);
+        alert(data.mensaje || "No se pudo eliminar el producto");
       }
     } catch (error) {
       console.error(error);
@@ -124,7 +141,7 @@ export const CartProvider = ({ children }) => {
   const vaciarMiCarrito = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`${API_URL}/carrito`, {
+      const res = await fetch(`${API_URL}/carrito/vaciar`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -134,6 +151,10 @@ export const CartProvider = ({ children }) => {
 
       if (res.ok) {
         await obtenerCarrito();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        console.error("Error al vaciar carrito:", data.mensaje);
+        alert(data.mensaje || "No se pudo vaciar el carrito");
       }
     } catch (error) {
       console.error(error);
