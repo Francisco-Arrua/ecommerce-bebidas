@@ -6,6 +6,23 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  maxAge: 24 * 60 * 60 * 1000,
+  path: "/",
+};
+
+const emitirSesion = (res, usuario) => {
+  const token = jwt.sign(
+    { id: usuario.id, rol: usuario.rol },
+    process.env.JWT_SECRET,
+    { expiresIn: "1d", issuer: "ecommerce-api", audience: "ecommerce-frontend" }
+  );
+  res.cookie("auth_token", token, cookieOptions);
+};
+
 export const register = async (req, res) => {
   try {
     const { nombre, email, password } = req.body;
@@ -36,20 +53,9 @@ export const register = async (req, res) => {
       },
     });
 
-    // 🔥 NUEVO: Generamos el token automáticamente al registrarse
-    const token = jwt.sign(
-      {
-        id: usuario.id,
-        rol: usuario.rol,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    // Mandamos el token de vuelta al frontend junto al usuario
+    emitirSesion(res, usuario);
     res.status(201).json({
       mensaje: "Usuario registrado correctamente",
-      token, // 🔥 Ahora viaja el token acá
       usuario: {
         id: usuario.id,
         nombre: usuario.nombre,
@@ -99,18 +105,10 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-    {
-        id: usuario.id,
-        rol: usuario.rol,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: "1d" }
-    );
+    emitirSesion(res, usuario);
 
     res.json({
       mensaje: "Login correcto",
-      token,
       usuario: {
         id: usuario.id,
         nombre: usuario.nombre,
@@ -208,7 +206,8 @@ export const solicitarRecuperacion = async (req, res) => {
     });
 
     // Enlace que apunta a tu FRONTEND (React) llevando el token en la URL
-    const enlaceRecuperacion = `http://localhost:5173/restablecer-password?token=${token}`;
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const enlaceRecuperacion = `${frontendUrl}/restablecer-password?token=${encodeURIComponent(token)}`;
 
     // Enviamos el mail con el botón HTML
     await resend.emails.send({
@@ -269,4 +268,9 @@ export const restablecerPassword = async (req, res) => {
     console.error(error);
     res.status(500).json({ mensaje: "Error al cambiar la contraseña." });
   }
+};
+
+export const cerrarSesion = (req, res) => {
+  res.clearCookie("auth_token", { ...cookieOptions, maxAge: undefined });
+  res.json({ mensaje: "Sesión cerrada" });
 };

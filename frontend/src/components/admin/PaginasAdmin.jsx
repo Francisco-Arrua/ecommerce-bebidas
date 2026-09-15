@@ -65,6 +65,7 @@ export default function PaginasAdmin() {
     try {
       const res = await fetch(`${API_URL}/upload`, {
         method: "POST",
+        credentials: "include",
         body: formDataImagen,
       });
       const data = await res.json();
@@ -94,6 +95,7 @@ export default function PaginasAdmin() {
       if (editandoId) {
         const res = await fetch(`${API_URL}/paginas/${editandoId}`, {
           method: "PUT",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(cuerpoPeticion),
         });
@@ -101,6 +103,7 @@ export default function PaginasAdmin() {
       } else {
         const res = await fetch(`${API_URL}/paginas`, {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(cuerpoPeticion),
         });
@@ -140,7 +143,7 @@ export default function PaginasAdmin() {
     if (!confirmar) return;
 
     try {
-      await fetch(`${API_URL}/paginas/${id}`, { method: "DELETE" });
+      await fetch(`${API_URL}/paginas/${id}`, { method: "DELETE", credentials: "include" });
       obtenerPaginas();
     } catch (error) {
       console.error(error);

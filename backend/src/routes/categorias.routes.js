@@ -6,15 +6,17 @@ import {
   editarCategoria,
   eliminarCategoria,
 } from "../controllers/categorias.controller.js";
+import { verificarToken } from "../middlewares/auth.middleware.js";
+import { soloAdmin } from "../middlewares/roles.middleware.js";
 
 const router = Router();
 
 router.get("/", getCategorias);
 
-router.post("/", crearCategoria);
+router.post("/", [verificarToken, soloAdmin], crearCategoria);
 
-router.put("/:id", editarCategoria);
+router.put("/:id", [verificarToken, soloAdmin], editarCategoria);
 
-router.delete("/:id", eliminarCategoria);
+router.delete("/:id", [verificarToken, soloAdmin], eliminarCategoria);
 
 export default router;

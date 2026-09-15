@@ -17,8 +17,8 @@ router.get("/", getOpcionesEnvioActivas);
 
 // Rutas de administración
 router.get("/admin/todas", [verificarToken, soloAdmin], getTodasLasOpcionesEnvio);
-router.post("/", [verificarToken, soloAdmin], crearOpcionEnvio);
-router.put("/:id", [verificarToken, soloAdmin], actualizarOpcionEnvio);
-router.delete("/:id", [verificarToken, soloAdmin], eliminarOpcionEnvio);
+router.post("/admin", [verificarToken, soloAdmin], crearOpcionEnvio);
+router.put("/admin/:id", [verificarToken, soloAdmin], actualizarOpcionEnvio);
+router.delete("/admin/:id", [verificarToken, soloAdmin], eliminarOpcionEnvio);
 
 export default router;

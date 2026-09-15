@@ -19,6 +19,7 @@ export default function Register() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
@@ -29,14 +30,7 @@ export default function Register() {
         throw new Error(data.mensaje || "Error al registrar usuario");
       }
 
-      // Si tu backend loguea automáticamente al registrar dando un token:
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        navigate("/"); // Al ir al inicio, el AuthProvider leerá el token y sabrá su rol
-      } else {
-        // Si no loguea directo, lo mandamos al login
-        navigate("/login");
-      }
+      navigate("/");
     } catch (err) {
       setError(err.message);
     } finally {

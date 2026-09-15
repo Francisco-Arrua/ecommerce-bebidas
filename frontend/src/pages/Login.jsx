@@ -19,6 +19,7 @@ export default function Login() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
@@ -29,9 +30,6 @@ export default function Login() {
         throw new Error(data.mensaje || "Credenciales inválidas");
       }
 
-      // Guardamos el token en localStorage
-      localStorage.setItem("token", data.token);
-      
       // Redirigimos al inicio (el AuthProvider se encargará de validar quién es)
       navigate("/");
       // Forzamos un refresco rápido para que el estado global se entere del nuevo token

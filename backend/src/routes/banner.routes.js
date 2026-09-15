@@ -7,17 +7,19 @@ import {
   eliminarBanner,
   cambiarActivo,
 } from "../controllers/banner.controller.js";
+import { verificarToken } from "../middlewares/auth.middleware.js";
+import { soloAdmin } from "../middlewares/roles.middleware.js";
 
 const router = Router();
 
 router.get("/", getBanners);
 
-router.post("/", crearBanner);
+router.post("/", [verificarToken, soloAdmin], crearBanner);
 
-router.put("/:id", actualizarBanner);
+router.put("/:id", [verificarToken, soloAdmin], actualizarBanner);
 
-router.delete("/:id", eliminarBanner);
+router.delete("/:id", [verificarToken, soloAdmin], eliminarBanner);
 
-router.patch("/:id/activo", cambiarActivo);
+router.patch("/:id/activo", [verificarToken, soloAdmin], cambiarActivo);
 
 export default router;

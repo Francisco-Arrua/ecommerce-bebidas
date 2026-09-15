@@ -14,13 +14,12 @@ export default function CredencialesMP() {
   const [error, setError] = useState("");
 
   const API_URL = import.meta.env.VITE_API_URL;
-  const token = localStorage.getItem("token");
 
   const obtenerEstado = async () => {
     setCargando(true);
     try {
       const res = await fetch(`${API_URL}/configuracionpago`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
       });
       const data = await res.json();
       setEstadoActual(data);
@@ -49,6 +48,11 @@ export default function CredencialesMP() {
       return;
     }
 
+    if (!estadoActual?.mpWebhookSecretConfigurado && !form.mpWebhookSecret) {
+      setError("La clave secreta del Webhook es necesaria para confirmar los pagos automáticamente.");
+      return;
+    }
+
     setGuardando(true);
     try {
       const body = {
@@ -61,9 +65,9 @@ export default function CredencialesMP() {
 
       const res = await fetch(`${API_URL}/configuracionpago`, {
         method: "PUT",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(body),
       });
@@ -172,7 +176,14 @@ export default function CredencialesMP() {
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "13px", color: "#334155", fontWeight: 600 }}>Conexión</span>
+                <div>
+                  <span style={{ display: "block", fontSize: "13px", color: "#334155", fontWeight: 600 }}>
+                    Estado de la integración
+                  </span>
+                  <span style={{ display: "block", marginTop: "3px", fontSize: "12px", color: "#64748b" }}>
+                    Indica si la tienda tiene los datos básicos para cobrar.
+                  </span>
+                </div>
                 <span
                   style={{
                     fontSize: "12px",
@@ -183,7 +194,7 @@ export default function CredencialesMP() {
                     background: estadoActual?.configurado ? "rgba(22,163,74,0.1)" : "rgba(220,38,38,0.1)",
                   }}
                 >
-                  {estadoActual?.configurado ? "Conectado" : "Sin configurar"}
+                  {estadoActual?.configurado ? "Listo para cobrar" : "Falta Access Token o Public Key"}
                 </span>
               </div>
 
@@ -197,9 +208,14 @@ export default function CredencialesMP() {
               )}
 
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-                <span style={{ color: "#64748b" }}>Webhook Secret</span>
-                <span style={{ color: estadoActual?.mpWebhookSecretConfigurado ? "#16a34a" : "#dc2626", fontWeight: 600 }}>
-                  {estadoActual?.mpWebhookSecretConfigurado ? "Configurado" : "Sin configurar"}
+                <div>
+                  <span style={{ display: "block", color: "#64748b" }}>Confirmación automática de pagos</span>
+                  <span style={{ display: "block", marginTop: "3px", fontSize: "12px", color: "#94a3b8" }}>
+                    Usa el Webhook Secret para validar los avisos de Mercado Pago.
+                  </span>
+                </div>
+                <span style={{ color: estadoActual?.mpWebhookSecretConfigurado ? "#16a34a" : "#dc2626", fontWeight: 600, whiteSpace: "nowrap" }}>
+                  {estadoActual?.mpWebhookSecretConfigurado ? "Activa" : "Falta configurar"}
                 </span>
               </div>
 
@@ -230,14 +246,14 @@ export default function CredencialesMP() {
           </div>
 
           <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 18px 0", lineHeight: 1.5 }}>
-            Por seguridad no mostramos el Access Token completo. Para guardar cualquier
-            cambio (aunque sea solo el Webhook Secret) tenés que volver a pegar el Access
-            Token y la Public Key completos.
+            Estos datos conectan tu tienda con tu cuenta de Mercado Pago. Los encontrás
+            en Mercado Pago, dentro de <strong>Configuración de tu aplicación &gt; Credenciales</strong>.
+            Por seguridad, al guardar cambios tenés que volver a pegar el Access Token y la Public Key completos.
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Access Token *</label>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Access Token de Mercado Pago *</label>
               <input
                 type="password"
                 placeholder="APP_USR-xxxxxxxx-xxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxxx"
@@ -247,10 +263,13 @@ export default function CredencialesMP() {
                 onFocus={manejarFoco}
                 onBlur={manejarBlur}
               />
+              <span style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.45 }}>
+                Es la clave privada que autoriza al backend a crear preferencias y consultar pagos. No la compartas ni la pongas en el frontend.
+              </span>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Public Key *</label>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Public Key de Mercado Pago *</label>
               <input
                 type="text"
                 placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -260,11 +279,14 @@ export default function CredencialesMP() {
                 onFocus={manejarFoco}
                 onBlur={manejarBlur}
               />
+              <span style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.45 }}>
+                Es el identificador público de tu aplicación. Mercado Pago la muestra junto al Access Token.
+              </span>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>
-                Webhook Secret <span style={{ fontWeight: 400, color: "#94a3b8" }}>(opcional)</span>
+                Clave secreta del Webhook *
               </label>
               <input
                 type="password"
@@ -275,6 +297,9 @@ export default function CredencialesMP() {
                 onFocus={manejarFoco}
                 onBlur={manejarBlur}
               />
+              <span style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.45 }}>
+                Es la clave que Mercado Pago usa para firmar las notificaciones de pago. Permite verificar que el aviso sea auténtico y confirmar la orden automáticamente.
+              </span>
             </div>
           </div>
         </div>

@@ -45,14 +45,13 @@ export default function Pedidos() {
   const [actualizandoId, setActualizandoId] = useState(null);
 
   const API_URL = import.meta.env.VITE_API_URL;
-  const token = localStorage.getItem("token");
 
   const obtenerOrdenes = async () => {
     setCargando(true);
     setError("");
     try {
       const res = await fetch(`${API_URL}/orden/admin/todas`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
       });
 
       if (!res.ok) {
@@ -79,9 +78,9 @@ export default function Pedidos() {
     try {
       const res = await fetch(`${API_URL}/orden/${ordenId}/estado`, {
         method: "PATCH",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(cambios),
       });

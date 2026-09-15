@@ -7,25 +7,15 @@ export function AuthProvider({ children }) {
   const [cargando, setCargando] = useState(true);
 
   const verificarUsuario = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setUsuario(null);
-      setCargando(false);
-      return;
-    }
-
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`, 
-        },
+        credentials: "include",
       });
 
       if (res.ok) {
         const data = await res.json();
         setUsuario(data.usuario);
       } else {
-        localStorage.removeItem("token");
         setUsuario(null);
       }
     } catch (error) {
@@ -37,8 +27,11 @@ export function AuthProvider({ children }) {
 
 
   const cerrarSesion = () => {
-    localStorage.removeItem("token"); // Borra el token del almacenamiento
-    setUsuario(null); // Limpia el estado del usuario inmediatamente
+    fetch(`${import.meta.env.VITE_API_URL}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {});
+    setUsuario(null);
   };
 
   useEffect(() => {

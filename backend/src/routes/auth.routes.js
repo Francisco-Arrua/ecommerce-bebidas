@@ -1,6 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit"; 
-import { register, login, cambiarPassword, solicitarRecuperacion, restablecerPassword } from "../controllers/auth.controller.js";
+import { register, login, cerrarSesion, cambiarPassword, solicitarRecuperacion, restablecerPassword } from "../controllers/auth.controller.js";
 import { verificarToken } from "../middlewares/auth.middleware.js";
 import { prisma } from "../db/prisma.js";
 
@@ -31,6 +31,7 @@ const limitadorLogin = rateLimit({
 router.post("/register", limitadorRegistro, register);
 
 router.post("/login", limitadorLogin, login);
+router.post("/logout", cerrarSesion);
 
 router.put("/cambiar-password", verificarToken, cambiarPassword);
 

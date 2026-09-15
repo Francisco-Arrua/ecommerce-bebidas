@@ -55,6 +55,7 @@ export default function BannerAdmin() {
 
       const res = await fetch(`${API_URL}/upload`, {
         method: "POST",
+        credentials: "include",
         body: formData,
       });
 
@@ -79,6 +80,7 @@ export default function BannerAdmin() {
     try {
       await fetch(`${API_URL}/banner`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -118,6 +120,7 @@ export default function BannerAdmin() {
     try {
       await fetch(`${API_URL}/banner/${bannerEditando}`, {
         method: "PUT",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json"
         },
@@ -153,6 +156,7 @@ export default function BannerAdmin() {
     try {
       await fetch(`${API_URL}/banner/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (bannerEditando === id) cancelarEdicion();
       obtenerBanners();
@@ -165,6 +169,7 @@ export default function BannerAdmin() {
     try {
       await fetch(`${API_URL}/banner/${id}/activo`, {
         method: "PATCH",
+        credentials: "include",
       });
       obtenerBanners();
     } catch (error) {

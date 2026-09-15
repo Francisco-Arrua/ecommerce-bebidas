@@ -37,7 +37,7 @@ export default function Navbar() {
   const API_URL = import.meta.env.VITE_API_URL;
   
   const cerrarSesion = () => {
-    localStorage.removeItem("token");
+    fetch(`${API_URL}/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
     setUsuario(null);
     setMostrarPerfil(false);
     navigate("/");
@@ -139,7 +139,7 @@ export default function Navbar() {
   return (
   <header
     style={{
-      background: "rgba(10, 10, 12, 0.95)", 
+      background: "rgba(6, 6, 6, 0.95)", 
       backdropFilter: "blur(16px)", 
       position: "sticky",
       top: 0,

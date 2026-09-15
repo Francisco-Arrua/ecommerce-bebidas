@@ -44,6 +44,7 @@ export default function SubcategoriasAdmin() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/subcategorias/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (!res.ok) throw new Error("No se pudo eliminar la subcategoría");
       obtenerSubcategorias();
@@ -76,6 +77,7 @@ export default function SubcategoriasAdmin() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/subcategorias`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -102,6 +104,7 @@ export default function SubcategoriasAdmin() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/subcategorias/${id}`, {
         method: "PUT",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

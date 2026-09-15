@@ -9,6 +9,7 @@ export default function Pago() {
   const navigate = useNavigate();
 
   const [checkoutData, setCheckoutData] = useState(null);
+  const [opcionesEnvio, setOpcionesEnvio] = useState([]);
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,19 +30,29 @@ export default function Pago() {
     setCheckoutData(JSON.parse(datosGuardados));
   }, [navigate]);
 
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/envio`)
+      .then((res) => res.json())
+      .then(setOpcionesEnvio)
+      .catch(() => setOpcionesEnvio([]));
+  }, []);
+
+  const opcionEnvio = opcionesEnvio.find(
+    (opcion) => String(opcion.id) === String(checkoutData?.opcionEnvioId)
+  );
+  const costoEnvio = Number(opcionEnvio?.costo || 0);
+
   const handlePagarConMercadoPago = async () => {
     if (!checkoutData) return;
     setProcesando(true);
     setError("");
 
-    const token = localStorage.getItem("token");
-
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/pagos/crear-preferencia`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(checkoutData),
       });
@@ -121,7 +132,7 @@ export default function Pago() {
           {checkoutData && (
             <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "16px", fontSize: "13px" }}>
               <p style={{ margin: "0 0 4px 0" }}>
-                <strong>Entrega:</strong> {checkoutData.metodoEnvio}
+                <strong>Entrega:</strong> {opcionEnvio?.nombre || "Cargando..."}
               </p>
               <p style={{ margin: 0 }}>
                 <strong>Destinatario:</strong> {checkoutData.datosEnvio?.nombreRecibe}
@@ -133,7 +144,7 @@ export default function Pago() {
           <div style={{ borderTop: "1px solid #0f172a", paddingTop: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "13px", fontWeight: 700, textTransform: "uppercase" }}>Total a pagar</span>
             <span style={{ fontSize: "24px", fontWeight: 900 }}>
-              $ {(totalCompra + (checkoutData?.costoEnvio || 0)).toLocaleString("es-AR")}
+              $ {(totalCompra + costoEnvio).toLocaleString("es-AR")}
             </span>
           </div>
 

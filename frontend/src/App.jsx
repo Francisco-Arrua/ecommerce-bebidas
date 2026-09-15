@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Carrito from "./pages/Carrito";
 import Envio from "./pages/Envio";
 import Pago from "./pages/Pago";
+import PagoResultado from "./pages/PagoResultado";
 
 import CambiarPasswordPerfil from "./pages/CambiarPasswordPerfil";
 import SolicitarRecuperacion from "./pages/SolicitarRecuperacion";
@@ -38,6 +39,7 @@ function App() {
             <Route path="/carrito" element={<Carrito />} />
             <Route path="/envio" element={<Envio />} />
             <Route path="/pago" element={<Pago />} />
+            <Route path="/pago/resultado" element={<PagoResultado />} />
 
             <Route path="/perfil/cambiar-password" element={<CambiarPasswordPerfil />} />
             <Route path="/recuperar" element={<SolicitarRecuperacion />} />

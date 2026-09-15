@@ -14,13 +14,11 @@ export default function CambiarPasswordPerfil() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token"); 
-
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/cambiar-password`, {
         method: "PUT",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`, 
         },
         body: JSON.stringify({ passwordActual, nuevaPassword }),
       });

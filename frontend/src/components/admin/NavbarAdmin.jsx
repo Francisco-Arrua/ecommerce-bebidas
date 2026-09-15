@@ -35,7 +35,6 @@ export default function NavbarAdmin({ seccion, setSeccion }) {
   }, [menuAbierto]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token"); 
     cerrarSesion();
     navigate("/");
     window.location.reload();

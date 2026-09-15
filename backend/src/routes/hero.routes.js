@@ -7,17 +7,19 @@ import {
   eliminarSlide,
   cambiarActivo
 } from "../controllers/hero.controller.js";
+import { verificarToken } from "../middlewares/auth.middleware.js";
+import { soloAdmin } from "../middlewares/roles.middleware.js";
 
 const router = Router();
 
 router.get("/", getSlides);
 
-router.post("/", crearSlide);
+router.post("/", [verificarToken, soloAdmin], crearSlide);
 
-router.put("/:id", actualizarSlide);
+router.put("/:id", [verificarToken, soloAdmin], actualizarSlide);
 
-router.delete("/:id", eliminarSlide);
+router.delete("/:id", [verificarToken, soloAdmin], eliminarSlide);
 
-router.patch("/:id/activo", cambiarActivo);
+router.patch("/:id/activo", [verificarToken, soloAdmin], cambiarActivo);
 
 export default router;

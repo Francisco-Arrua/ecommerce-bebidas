@@ -7,7 +7,6 @@ const UPLOAD_ENDPOINT = `${API_URL}/upload`;
 
 const obtenerHeadersAdmin = () => ({
   "Content-Type": "application/json",
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
 
 export default function ProductosAdmin() {
@@ -100,6 +99,7 @@ export default function ProductosAdmin() {
       try {
         const res = await fetch(UPLOAD_ENDPOINT, {
           method: "POST",
+          credentials: "include",
           body: formDataImagen,
         });
         
@@ -285,6 +285,7 @@ export default function ProductosAdmin() {
     try {
       const res = await fetch(`${API_URL}/productos`, {
         method: "POST",
+        credentials: "include",
         headers: obtenerHeadersAdmin(),
         body: JSON.stringify({
           ...formData,
@@ -330,6 +331,7 @@ export default function ProductosAdmin() {
     try {
       await fetch(`${API_URL}/productos/${id}`, {
         method: "DELETE",
+        credentials: "include",
         headers: obtenerHeadersAdmin(),
       });
       obtenerProductos();
@@ -360,6 +362,7 @@ export default function ProductosAdmin() {
     try {
       await fetch(`${API_URL}/productos/${editandoId}`, {
         method: "PUT",
+        credentials: "include",
         headers: obtenerHeadersAdmin(),
         body: JSON.stringify({
           ...editForm,
@@ -390,6 +393,7 @@ export default function ProductosAdmin() {
 
       await fetch(`${API_URL}/productos/${producto.id}`, {
         method: "PUT",
+        credentials: "include",
         headers: obtenerHeadersAdmin(),
         body: JSON.stringify({
           nombre: producto.nombre,
@@ -416,7 +420,7 @@ export default function ProductosAdmin() {
     try {
       await fetch(`${API_URL}/productos/activo/${id}`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        credentials: "include",
       });
       obtenerProductos();
     } catch (error) {
@@ -428,7 +432,7 @@ export default function ProductosAdmin() {
     try {
       await fetch(`${API_URL}/productos/destacado/${id}`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        credentials: "include",
       });
       obtenerProductos();
     } catch (error) {

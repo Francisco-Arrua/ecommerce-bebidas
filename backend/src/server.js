@@ -24,8 +24,11 @@ import configuracionPagoRoutes from "./routes/configuracionpago.routes.js";
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+const frontendOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
+
+app.disable("x-powered-by");
+app.use(cors({ origin: frontendOrigin, credentials: true }));
+app.use(express.json({ limit: "100kb" }));
 
 app.use("/productos", productosRoutes);
 app.use("/categorias", categoriasRoutes);

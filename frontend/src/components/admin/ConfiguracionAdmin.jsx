@@ -34,6 +34,7 @@ export default function ConfiguracionAdmin() {
     try {
       await fetch(`${API_URL}/configuracion`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(configuracion),
       });

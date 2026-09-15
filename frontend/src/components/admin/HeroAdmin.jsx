@@ -48,6 +48,7 @@ export default function HeroAdmin() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/hero`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -100,6 +101,7 @@ export default function HeroAdmin() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/hero/${editandoId}`, {
         method: "PUT",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -121,6 +123,7 @@ export default function HeroAdmin() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/hero/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Error al eliminar");
       obtenerSlides();
@@ -133,6 +136,7 @@ export default function HeroAdmin() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/hero/${id}/activo`, {
         method: "PATCH",
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Error al cambiar estado");
       obtenerSlides();
@@ -175,6 +179,7 @@ export default function HeroAdmin() {
       // Subir al backend
       const res = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
         method: "POST",
+        credentials: "include",
         body: formDataImagen,
       });
 

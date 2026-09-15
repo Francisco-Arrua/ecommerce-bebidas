@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import Navbar from "../components/Navbar";
@@ -26,7 +26,9 @@ export default function Envio() {
   const navigate = useNavigate();
 
   // ✅ Todos los hooks van ANTES de cualquier return condicional (Reglas de los Hooks)
-  const [metodoEntrega, setMetodoEntrega] = useState("retiro"); // "retiro" | "envio"
+  const [opcionesEnvio, setOpcionesEnvio] = useState([]);
+  const [opcionEnvioId, setOpcionEnvioId] = useState("");
+  const [errorEnvio, setErrorEnvio] = useState("");
   const [formData, setFormData] = useState({
     nombreRecibe: "",
     telefono: "",
@@ -41,6 +43,23 @@ export default function Envio() {
 
   const itemsDelCarrito = Array.isArray(carrito) ? carrito : carrito?.items || [];
 
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/envio`)
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.mensaje || "No se pudieron cargar las opciones de envío");
+        return data;
+      })
+      .then((data) => {
+        setOpcionesEnvio(data);
+        if (data[0]) setOpcionEnvioId(String(data[0].id));
+      })
+      .catch((error) => setErrorEnvio(error.message));
+  }, []);
+
+  const opcionSeleccionada = opcionesEnvio.find((opcion) => String(opcion.id) === String(opcionEnvioId));
+  const esRetiro = opcionSeleccionada?.nombre.toLowerCase().includes("retiro");
+
   const handleChangeInput = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -48,22 +67,26 @@ export default function Envio() {
   const handleContinuarPago = (e) => {
     e.preventDefault();
 
+    if (!opcionSeleccionada) {
+      setErrorEnvio("Seleccioná un método de entrega disponible.");
+      return;
+    }
+
     const datosEnvio = {
       nombreRecibe: formData.nombreRecibe,
       telefono: formData.telefono,
       // Si es retiro, mandamos valores fijos del local en vez de pedirle datos al usuario
-      provincia: metodoEntrega === "envio" ? formData.provincia : "Retiro en local",
-      localidad: metodoEntrega === "envio" ? formData.localidad : "Retiro en local",
-      codigoPostal: metodoEntrega === "envio" ? formData.codigoPostal : "S/N",
-      calle: metodoEntrega === "envio" ? formData.calle : "Retiro en local",
-      numero: metodoEntrega === "envio" ? formData.numero : "S/N",
+      provincia: !esRetiro ? formData.provincia : "Retiro en local",
+      localidad: !esRetiro ? formData.localidad : "Retiro en local",
+      codigoPostal: !esRetiro ? formData.codigoPostal : "S/N",
+      calle: !esRetiro ? formData.calle : "Retiro en local",
+      numero: !esRetiro ? formData.numero : "S/N",
       pisoDepto: formData.pisoDepto || null,
       aclaraciones: formData.aclaraciones || null,
     };
 
     const checkoutData = {
-      metodoEnvio: metodoEntrega === "envio" ? "Envío a Domicilio" : "Retiro por Local",
-      costoEnvio: metodoEntrega === "envio" ? 0 : 0, // ajustar cuando tengas costos reales de envío
+      opcionEnvioId: opcionSeleccionada.id,
       datosEnvio,
     };
 
@@ -112,40 +135,20 @@ export default function Envio() {
               <label style={{ display: "block", fontSize: "12px", fontWeight: 800, textTransform: "uppercase", color: "#0f172a", marginBottom: "10px" }}>
                 Método de Entrega *
               </label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                <button
-                  type="button"
-                  onClick={() => setMetodoEntrega("retiro")}
-                  style={{
-                    padding: "14px",
-                    border: "1px solid #0f172a",
-                    background: metodoEntrega === "retiro" ? "#0f172a" : "#ffffff",
-                    color: metodoEntrega === "retiro" ? "#ffffff" : "#0f172a",
-                    fontWeight: 800,
-                    fontSize: "12px",
-                    textTransform: "uppercase",
-                    cursor: "pointer",
-                  }}
-                >
-                  Retiro por Local
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMetodoEntrega("envio")}
-                  style={{
-                    padding: "14px",
-                    border: "1px solid #0f172a",
-                    background: metodoEntrega === "envio" ? "#0f172a" : "#ffffff",
-                    color: metodoEntrega === "envio" ? "#ffffff" : "#0f172a",
-                    fontWeight: 800,
-                    fontSize: "12px",
-                    textTransform: "uppercase",
-                    cursor: "pointer",
-                  }}
-                >
-                  Envío a Domicilio
-                </button>
-              </div>
+              <select
+                value={opcionEnvioId}
+                onChange={(event) => setOpcionEnvioId(event.target.value)}
+                required
+                style={inputStyle}
+              >
+                <option value="" disabled>Seleccioná una opción</option>
+                {opcionesEnvio.map((opcion) => (
+                  <option key={opcion.id} value={opcion.id}>
+                    {opcion.nombre} - $ {Number(opcion.costo).toLocaleString("es-AR")}
+                  </option>
+                ))}
+              </select>
+              {errorEnvio && <p style={{ color: "#dc2626", fontSize: "12px" }}>{errorEnvio}</p>}
             </div>
 
             {/* CAMPOS PERSONALES */}
@@ -175,7 +178,7 @@ export default function Envio() {
             </div>
 
             {/* CAMPOS DE DIRECCIÓN (SOLO SI ES ENVÍO) */}
-            {metodoEntrega === "envio" && (
+            {opcionSeleccionada && !esRetiro && (
               <>
                 <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px" }}>
                   <div>

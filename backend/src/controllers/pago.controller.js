@@ -9,6 +9,15 @@ import {
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 const BACKEND_URL = process.env.BACKEND_URL; // debe ser una URL pública (https) para que MP pueda llamarla
 
+const esUrlPublica = (valor) => {
+  try {
+    const url = new URL(valor);
+    return url.protocol === "https:" && !["localhost", "127.0.0.1"].includes(url.hostname);
+  } catch {
+    return false;
+  }
+};
+
 // ─────────────────────────────────────────────────────────
 // 1. Crear la preferencia de pago (Checkout Pro)
 //    Se llama desde Pago.jsx cuando el usuario aprieta "Pagar con Mercado Pago"
@@ -17,7 +26,7 @@ export const crearPreferencia = async (req, res) => {
   try {
     const mpClient = await obtenerClienteMP();
     const usuarioId = Number(req.usuario.id);
-    const { datosEnvio, metodoEnvio, costoEnvio = 0 } = req.body;
+    const { datosEnvio, opcionEnvioId } = req.body;
 
     if (!datosEnvio) {
       return res.status(400).json({ mensaje: "Los datos de envío son obligatorios" });
@@ -35,7 +44,15 @@ export const crearPreferencia = async (req, res) => {
       aclaraciones,
     } = datosEnvio;
 
-    const esRetiro = metodoEnvio === "Retiro por Local";
+    const opcionEnvio = await prisma.opcionEnvio.findFirst({
+      where: { id: Number(opcionEnvioId), activo: true },
+    });
+
+    if (!opcionEnvio) {
+      return res.status(400).json({ mensaje: "La opción de envío no existe o ya no está disponible" });
+    }
+
+    const esRetiro = opcionEnvio.nombre.toLowerCase().includes("retiro");
 
     if (!nombreRecibe || !telefono) {
       return res.status(400).json({ mensaje: "Nombre y teléfono son obligatorios" });
@@ -107,7 +124,7 @@ export const crearPreferencia = async (req, res) => {
       });
     }
 
-    const costoEnvioNum = Number(costoEnvio) || 0;
+    const costoEnvioNum = Number(opcionEnvio.costo);
     const totalGeneralCalculado = totalProductosCalculado + costoEnvioNum;
 
     if (costoEnvioNum > 0) {
@@ -128,7 +145,7 @@ export const crearPreferencia = async (req, res) => {
         totalProductos: totalProductosCalculado,
         costoEnvio: costoEnvioNum,
         totalGeneral: totalGeneralCalculado,
-        metodoEnvio: metodoEnvio || "Envío a Domicilio",
+        metodoEnvio: opcionEnvio.nombre,
         estado: "PENDIENTE",
         estadoEnvio: "PENDIENTE_DESPACHO",
         items: { create: itemsOrdenParaCrear },
@@ -155,6 +172,19 @@ export const crearPreferencia = async (req, res) => {
       },
     });
 
+    const tieneRetornoPublico = esUrlPublica(FRONTEND_URL);
+    const tieneWebhookPublico = esUrlPublica(BACKEND_URL);
+    const datosRetorno = tieneRetornoPublico
+      ? {
+          back_urls: {
+            success: `${FRONTEND_URL}/pago/resultado`,
+            failure: `${FRONTEND_URL}/pago/resultado`,
+            pending: `${FRONTEND_URL}/pago/resultado`,
+          },
+          auto_return: "approved",
+        }
+      : {};
+
     const preferenceClient = new Preference(mpClient);
     const preferenceResponse = await preferenceClient.create({
       body: {
@@ -164,13 +194,8 @@ export const crearPreferencia = async (req, res) => {
           phone: { number: telefono },
         },
         external_reference: String(orden.id),
-        back_urls: {
-          success: `${FRONTEND_URL}/pago/resultado`,
-          failure: `${FRONTEND_URL}/pago/resultado`,
-          pending: `${FRONTEND_URL}/pago/resultado`,
-        },
-        auto_return: "approved",
-        notification_url: BACKEND_URL ? `${BACKEND_URL}/pagos/webhook` : undefined,
+        ...datosRetorno,
+        notification_url: tieneWebhookPublico ? `${BACKEND_URL}/pagos/webhook` : undefined,
         statement_descriptor: "MI TIENDA",
       },
     });

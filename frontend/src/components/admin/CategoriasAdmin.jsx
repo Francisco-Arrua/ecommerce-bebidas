@@ -27,6 +27,7 @@ export default function CategoriasAdmin() {
     try {
       await fetch(`${import.meta.env.VITE_API_URL}/categorias`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -46,6 +47,7 @@ export default function CategoriasAdmin() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/categorias/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (!res.ok) {
@@ -64,6 +66,7 @@ export default function CategoriasAdmin() {
     try {
       await fetch(`${import.meta.env.VITE_API_URL}/categorias/${id}`, {
         method: "PUT",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

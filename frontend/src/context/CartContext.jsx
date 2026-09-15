@@ -16,11 +16,10 @@ export const CartProvider = ({ children }) => {
 
   // 1. Cargar el carrito del usuario desde la API
   const obtenerCarrito = async () => {
-    const token = localStorage.getItem("token");
     if (!usuarioId) return;
     setCargando(true);
     try {
-      const res = await fetch(`${API_URL}/carrito`, {headers: {Authorization: `Bearer ${token}`,},});
+      const res = await fetch(`${API_URL}/carrito`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setCarrito(data);
@@ -46,7 +45,6 @@ export const CartProvider = ({ children }) => {
   // 2. Agregar producto al carrito
   // 2. Agregar producto al carrito
   const agregarProducto = async (productoIdOrItem, cantidadParam) => {
-    const token = localStorage.getItem("token");
     if (!usuarioId) return alert("Debes iniciar sesión para agregar productos");
 
     // Si nos pasan un objeto (como { id, cantidad, talleId }), extraemos los valores
@@ -64,9 +62,9 @@ export const CartProvider = ({ children }) => {
     try {
       const res = await fetch(`${API_URL}/carrito`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ productoId, cantidad, talleId }),
       });
@@ -90,13 +88,12 @@ export const CartProvider = ({ children }) => {
 
   // 3. Actualizar cantidad de un ítem
   const actualizarCantidadItem = async (itemCarritoId, nuevaCantidad) => {
-    const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${API_URL}/carrito/item/${itemCarritoId}`, {
         method: "PUT",
+        credentials: "include",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
         body: JSON.stringify({ cantidad: nuevaCantidad }),
       });
@@ -116,13 +113,10 @@ export const CartProvider = ({ children }) => {
 
   // 4. Eliminar una línea del carrito
   const eliminarProductoItem = async (itemCarritoId) => {
-    const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${API_URL}/carrito/item/${itemCarritoId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       if (res.ok) {
@@ -139,13 +133,12 @@ export const CartProvider = ({ children }) => {
 
   // 5. Vaciar carrito por completo
   const vaciarMiCarrito = async () => {
-    const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${API_URL}/carrito/vaciar`, {
         method: "DELETE",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
       });
 

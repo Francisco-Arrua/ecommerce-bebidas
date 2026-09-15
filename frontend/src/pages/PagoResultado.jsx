@@ -26,10 +26,9 @@ export default function PagoResultado() {
     let cancelado = false;
 
     const consultarOrden = async () => {
-      const token = localStorage.getItem("token");
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/ordenes/${ordenId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/orden/${ordenId}`, {
+          credentials: "include",
         });
 
         if (!res.ok) {

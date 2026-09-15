@@ -67,6 +67,7 @@ export default function ColeccionesAdmin() {
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
         method: "POST",
+        credentials: "include",
         body: formData,
       });
 
@@ -101,13 +102,11 @@ export default function ColeccionesAdmin() {
     const method = editandoId ? "PUT" : "POST";
 
     try {
-      const token = localStorage.getItem("token");
-
       const res = await fetch(url, {
         method: method,
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           nombre,
@@ -149,12 +148,9 @@ export default function ColeccionesAdmin() {
     if (!confirm("¿Eliminar esta colección/promoción?")) return;
 
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`${import.meta.env.VITE_API_URL}/coleccion/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       if (res.ok) {

@@ -1,6 +1,5 @@
 import { Router } from "express";
 import {
-  crearOrden,
   getMisOrdenes,
   getOrdenPorId,
   getTodasLasOrdenes,
@@ -13,7 +12,6 @@ import { soloAdmin } from "../middlewares/roles.middleware.js";
 const router = Router();
 
 // Rutas Cliente
-router.post("/", verificarToken, crearOrden);
 router.get("/mis-ordenes", verificarToken, getMisOrdenes);
 
 // Rutas Admin
