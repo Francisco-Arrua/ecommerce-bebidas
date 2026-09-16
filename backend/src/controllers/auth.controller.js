@@ -14,6 +14,11 @@ const cookieOptions = {
   path: "/",
 };
 
+// Ahora devuelve el token. La cookie se sigue seteando igual (le sirve al
+// navegador de escritorio), pero además el frontend puede guardarlo en
+// localStorage y mandarlo como Authorization: Bearer — eso evita depender
+// de que el navegador acepte cookies de terceros (Safari/iOS las bloquea
+// por default, incluso con SameSite=None; Secure).
 const emitirSesion = (res, usuario) => {
   const token = jwt.sign(
     { id: usuario.id, rol: usuario.rol },
@@ -21,6 +26,7 @@ const emitirSesion = (res, usuario) => {
     { expiresIn: "1d", issuer: "ecommerce-api", audience: "ecommerce-frontend" }
   );
   res.cookie("auth_token", token, cookieOptions);
+  return token;
 };
 
 export const register = async (req, res) => {
@@ -53,7 +59,7 @@ export const register = async (req, res) => {
       },
     });
 
-    emitirSesion(res, usuario);
+    const token = emitirSesion(res, usuario);
     res.status(201).json({
       mensaje: "Usuario registrado correctamente",
       usuario: {
@@ -62,6 +68,7 @@ export const register = async (req, res) => {
         email: usuario.email,
         rol: usuario.rol,
       },
+      token,
     });
 
   } catch (error) {
@@ -105,7 +112,7 @@ export const login = async (req, res) => {
       });
     }
 
-    emitirSesion(res, usuario);
+    const token = emitirSesion(res, usuario);
 
     res.json({
       mensaje: "Login correcto",
@@ -115,6 +122,7 @@ export const login = async (req, res) => {
         email: usuario.email,
         rol: usuario.rol,
       },
+      token,
     });
 
   } catch (error) {

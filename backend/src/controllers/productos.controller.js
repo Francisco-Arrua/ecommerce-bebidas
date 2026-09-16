@@ -107,6 +107,32 @@ export const getProducto = async (req, res) => {
   }
 };
 
+// Helper interno para normalizar el payload de imágenes
+const parsearImagenes = (rawImagenes) => {
+  if (!rawImagenes) return [];
+  if (typeof rawImagenes === "string") {
+    try {
+      return JSON.parse(rawImagenes);
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(rawImagenes) ? rawImagenes : [];
+};
+
+// Helper interno para normalizar el payload de talles
+const parsearTalles = (rawTalles) => {
+  if (!rawTalles) return [];
+  if (typeof rawTalles === "string") {
+    try {
+      return JSON.parse(rawTalles);
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(rawTalles) ? rawTalles : [];
+};
+
 // POST /productos
 export const crearProducto = async (req, res) => {
   try {
@@ -122,8 +148,11 @@ export const crearProducto = async (req, res) => {
       destacado = false,
       activo = true,
       talles = [],
-      imagenes = [],
+      imagenes: rawImagenes = [],
     } = req.body;
+
+    const listaImagenes = parsearImagenes(rawImagenes);
+    const listaTalles = parsearTalles(talles);
 
     const producto = await prisma.producto.create({
       data: {
@@ -135,24 +164,24 @@ export const crearProducto = async (req, res) => {
         precio: Number(precio),
         activo: Boolean(activo),
         destacado: Boolean(destacado),
-
-        // Si tiene talles, el stock general en BD queda en 0
         stock: tieneTalles ? 0 : Number(stock || 0),
         tieneTalles: Boolean(tieneTalles),
 
-        // Imágenes
-        imagenes: {
-          create: imagenes.map((imagen, index) => ({
-            url: imagen.url,
-            principal: Boolean(imagen.principal),
-            orden: index,
-          })),
-        },
+        // Mapeo seguro de imágenes
+        ...(listaImagenes.length > 0 && {
+          imagenes: {
+            create: listaImagenes.map((imagen, index) => ({
+              url: typeof imagen === "string" ? imagen : imagen.url,
+              principal: Boolean(imagen.principal ?? index === 0),
+              orden: index,
+            })),
+          },
+        }),
 
-        // Talles
-        ...(tieneTalles && talles.length > 0 && {
+        // Mapeo seguro de talles
+        ...(tieneTalles && listaTalles.length > 0 && {
           talles: {
-            create: talles.map((t) => ({
+            create: listaTalles.map((t) => ({
               talle: t.talle,
               stock: Number(t.stock),
             })),
@@ -170,7 +199,7 @@ export const crearProducto = async (req, res) => {
     res.status(201).json(formatearProducto(producto));
   } catch (error) {
     console.error("Error al crear producto:", error);
-    res.status(500).json({ mensaje: "Error al crear producto" });
+    res.status(500).json({ mensaje: "Error al crear producto", error: error.message });
   }
 };
 
@@ -189,75 +218,83 @@ export const actualizarProducto = async (req, res) => {
       tieneTalles,
       destacado,
       activo,
-      talles = [],
-      imagenes = [],
+      talles,
+      imagenes: rawImagenes,
     } = req.body;
 
     const idProducto = Number(id);
+    const tieneImagenesDefinidas = rawImagenes !== undefined;
+    const listaImagenes = tieneImagenesDefinidas ? parsearImagenes(rawImagenes) : [];
 
-    const productoActualizado = await prisma.$transaction(async (tx) => {
-      // 1. Reemplazar relaciones si vienen definidas
-      if (talles) {
-        await tx.talleProducto.deleteMany({
-          where: { productoId: idProducto },
+    const tieneTallesDefinidos = talles !== undefined;
+    const listaTalles = tieneTallesDefinidos ? parsearTalles(talles) : [];
+
+    const productoActualizado = await prisma.$transaction(
+      async (tx) => {
+        // 1. Eliminar relaciones previas solo si se enviaron nuevas listas
+        if (tieneTallesDefinidos) {
+          await tx.talleProducto.deleteMany({
+            where: { productoId: idProducto },
+          });
+        }
+
+        if (tieneImagenesDefinidas) {
+          await tx.imagenProducto.deleteMany({
+            where: { productoId: idProducto },
+          });
+        }
+
+        // 2. Actualizar producto y recrear relaciones
+        return await tx.producto.update({
+          where: { id: idProducto },
+          data: {
+            nombre: nombre ? capitalizar(nombre) : undefined,
+            descripcion,
+            marca: marca !== undefined ? (marca ? capitalizar(marca) : null) : undefined,
+            categoriaId: categoriaId !== undefined ? (categoriaId ? Number(categoriaId) : null) : undefined,
+            subcategoriaId: subcategoriaId !== undefined ? (subcategoriaId ? Number(subcategoriaId) : null) : undefined,
+            precio: precio !== undefined ? Number(precio) : undefined,
+            activo: activo !== undefined ? Boolean(activo) : undefined,
+            destacado: destacado !== undefined ? Boolean(destacado) : undefined,
+            tieneTalles: tieneTalles !== undefined ? Boolean(tieneTalles) : undefined,
+            stock: tieneTalles ? 0 : (stock !== undefined ? Number(stock) : undefined),
+
+            ...(tieneImagenesDefinidas && listaImagenes.length > 0 && {
+              imagenes: {
+                create: listaImagenes.map((img, index) => ({
+                  url: typeof img === "string" ? img : img.url,
+                  principal: Boolean(img.principal ?? index === 0),
+                  orden: index,
+                })),
+              },
+            }),
+
+            // ✅ FIX: antes se borraban los talles viejos pero nunca se
+            // volvían a crear los nuevos. Ahora sí se recrean.
+            ...(tieneTallesDefinidos && listaTalles.length > 0 && {
+              talles: {
+                create: listaTalles.map((t) => ({
+                  talle: t.talle,
+                  stock: Number(t.stock),
+                })),
+              },
+            }),
+          },
+          include: {
+            categoria: true,
+            subcategoria: true,
+            imagenes: true,
+            talles: true,
+          },
         });
-      }
-
-      if (imagenes) {
-        await tx.imagenProducto.deleteMany({
-          where: { productoId: idProducto },
-        });
-      }
-
-      // 2. Actualizar producto base
-      return await tx.producto.update({
-        where: { id: idProducto },
-        data: {
-          nombre: nombre ? capitalizar(nombre) : undefined,
-          descripcion,
-          marca: marca ? capitalizar(marca) : null,
-          categoriaId: categoriaId ? Number(categoriaId) : null,
-          subcategoriaId: subcategoriaId ? Number(subcategoriaId) : null,
-          precio: precio !== undefined ? Number(precio) : undefined,
-          activo: activo !== undefined ? Boolean(activo) : undefined,
-          destacado: destacado !== undefined ? Boolean(destacado) : undefined,
-          tieneTalles: tieneTalles !== undefined ? Boolean(tieneTalles) : undefined,
-          stock: tieneTalles ? 0 : Number(stock || 0),
-
-          // Recrear imágenes
-          ...(imagenes && imagenes.length > 0 && {
-            imagenes: {
-              create: imagenes.map((img, index) => ({
-                url: img.url,
-                principal: Boolean(img.principal),
-                orden: index,
-              })),
-            },
-          }),
-
-          // Recrear talles
-          ...(tieneTalles && talles && talles.length > 0 && {
-            talles: {
-              create: talles.map((t) => ({
-                talle: t.talle,
-                stock: Number(t.stock),
-              })),
-            },
-          }),
-        },
-        include: {
-          categoria: true,
-          subcategoria: true,
-          imagenes: true,
-          talles: true,
-        },
-      });
-    });
+      },
+      { maxWait: 5000, timeout: 10000 }
+    );
 
     res.json(formatearProducto(productoActualizado));
   } catch (error) {
     console.error("Error al actualizar producto:", error);
-    res.status(500).json({ mensaje: "Error al actualizar producto" });
+    res.status(500).json({ mensaje: "Error al actualizar producto", error: error.message });
   }
 };
 

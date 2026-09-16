@@ -40,7 +40,10 @@ export default function ProductosDestacados({ productos }) {
         }}
       >
         {productos
-          .filter((producto) => producto.destacado)
+          // ✅ FIX: antes solo filtraba por "destacado", así que un producto
+          // oculto (activo: false) que estuviera marcado como destacado
+          // igual se mostraba en la home. Ahora también exige activo === true.
+          .filter((producto) => producto.destacado && producto.activo)
           .slice(0, 12)
           .map((producto) => (
             <div
@@ -60,7 +63,6 @@ export default function ProductosDestacados({ productos }) {
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = "#0f172a";
                 e.currentTarget.style.transform = "translateY(-4px)";
-                // Buscamos el bloque de acción rápida interno para mostrarlo sutilmente si querés
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = "#e2e8f0";
@@ -158,7 +160,7 @@ export default function ProductosDestacados({ productos }) {
                     margin: "6px 0 8px 0",
                     color: "#0f172a",
                     fontSize: "14px",
-                    fontWeight: 700, // Un pelín más pesado el font
+                    fontWeight: 700,
                     lineHeight: "1.4",
                     minHeight: "40px",
                     display: "-webkit-box",
@@ -175,7 +177,7 @@ export default function ProductosDestacados({ productos }) {
                     margin: 0,
                     color: "#0f172a",
                     fontSize: "16px",
-                    fontWeight: 900, // Contraste puro en el precio
+                    fontWeight: 900,
                     letterSpacing: "-0.02em"
                   }}
                 >

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { iniciarSesion } = useAuth();
   const [formData, setFormData] = useState({ nombre: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,6 +32,11 @@ export default function Register() {
         throw new Error(data.mensaje || "Error al registrar usuario");
       }
 
+      // Antes esto dependía 100% de la cookie: si el navegador la bloqueaba
+      // (Safari/iOS y muchos mobile por default), el usuario quedaba
+      // registrado en la DB pero nunca "entraba". Ahora guardamos el token
+      // como respaldo y logueamos directo con los datos que ya tenemos.
+      iniciarSesion(data.token, data.usuario);
       navigate("/");
     } catch (err) {
       setError(err.message);
@@ -70,7 +77,7 @@ export default function Register() {
         </p>
 
         {error && (
-          <div style={{ background: "rgba(ef, 44, 44, 0.1)", border: "1px solid rgba(255, 75, 75, 0.2)", color: "#f87171", padding: "12px", borderRadius: "10px", fontSize: "14px", marginBottom: "20px", fontWeight: 500 }}>
+          <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.2)", color: "#f87171", padding: "12px", borderRadius: "10px", fontSize: "14px", marginBottom: "20px", fontWeight: 500 }}>
             {error}
           </div>
         )}

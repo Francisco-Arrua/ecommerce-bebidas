@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { iniciarSesion } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,10 +32,11 @@ export default function Login() {
         throw new Error(data.mensaje || "Credenciales inválidas");
       }
 
-      // Redirigimos al inicio (el AuthProvider se encargará de validar quién es)
+      // Guardamos el token (respaldo para navegadores que bloquean la cookie
+      // cross-site, típico en mobile) y actualizamos el estado global directo,
+      // sin necesitar recargar la página para que AuthContext se entere.
+      iniciarSesion(data.token, data.usuario);
       navigate("/");
-      // Forzamos un refresco rápido para que el estado global se entere del nuevo token
-      window.location.reload();
     } catch (err) {
       setError(err.message);
     } finally {
