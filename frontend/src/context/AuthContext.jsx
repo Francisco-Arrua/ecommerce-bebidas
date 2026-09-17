@@ -9,19 +9,19 @@ export function AuthProvider({ children }) {
   const API_URL = import.meta.env.VITE_API_URL;
 
   const verificarUsuario = async () => {
-    try {
-      const token = localStorage.getItem("token");
+    const tokenAlIniciar = localStorage.getItem("token");
 
+    try {
       const res = await fetch(`${API_URL}/auth/me`, {
         credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: tokenAlIniciar ? { Authorization: `Bearer ${tokenAlIniciar}` } : {},
       });
 
       if (res.ok) {
         const data = await res.json();
         setUsuario(data.usuario);
-      } else {
-        // El token guardado ya no sirve (venció, o el back reinició el JWT_SECRET, etc.)
+      } else if (localStorage.getItem("token") === tokenAlIniciar) {
+        // No borrar un token creado mientras esta verificación estaba pendiente.
         localStorage.removeItem("token");
         setUsuario(null);
       }

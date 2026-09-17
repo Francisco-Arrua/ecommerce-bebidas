@@ -32,6 +32,10 @@ export default function Login() {
         throw new Error(data.mensaje || "Credenciales inválidas");
       }
 
+      if (!data.token) {
+        throw new Error("El servidor no devolvió el token de sesión. Volvé a desplegar el backend.");
+      }
+
       // Guardamos el token (respaldo para navegadores que bloquean la cookie
       // cross-site, típico en mobile) y actualizamos el estado global directo,
       // sin necesitar recargar la página para que AuthContext se entere.

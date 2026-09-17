@@ -19,7 +19,11 @@ export const CartProvider = ({ children }) => {
     if (!usuarioId) return;
     setCargando(true);
     try {
-      const res = await fetch(`${API_URL}/carrito`, { credentials: "include" });
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/carrito`, {
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         const data = await res.json();
         setCarrito(data);
@@ -65,6 +69,9 @@ export const CartProvider = ({ children }) => {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          ...(localStorage.getItem("token")
+            ? { Authorization: `Bearer ${localStorage.getItem("token")}` }
+            : {}),
         },
         body: JSON.stringify({ productoId, cantidad, talleId }),
       });
@@ -94,6 +101,9 @@ export const CartProvider = ({ children }) => {
         credentials: "include",
         headers: {
             "Content-Type": "application/json",
+            ...(localStorage.getItem("token")
+              ? { Authorization: `Bearer ${localStorage.getItem("token")}` }
+              : {}),
           },
         body: JSON.stringify({ cantidad: nuevaCantidad }),
       });
@@ -117,6 +127,9 @@ export const CartProvider = ({ children }) => {
       const res = await fetch(`${API_URL}/carrito/item/${itemCarritoId}`, {
         method: "DELETE",
         credentials: "include",
+        headers: localStorage.getItem("token")
+          ? { Authorization: `Bearer ${localStorage.getItem("token")}` }
+          : {},
       });
 
       if (res.ok) {

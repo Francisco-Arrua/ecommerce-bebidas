@@ -24,7 +24,7 @@ export default function Navbar() {
   const [ocultarNavbar, setOcultarNavbar] = useState(false);
   const lastScrollY = useRef(0);
 
-  const { usuario, setUsuario } = useAuth();
+  const { usuario, cerrarSesion: cerrarSesionAuth } = useAuth();
   const [mostrarPerfil, setMostrarPerfil] = useState(false);
   const { carrito } = useContext(CartContext);
 
@@ -37,8 +37,7 @@ export default function Navbar() {
   const API_URL = import.meta.env.VITE_API_URL;
   
   const cerrarSesion = () => {
-    fetch(`${API_URL}/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
-    setUsuario(null);
+    cerrarSesionAuth();
     setMostrarPerfil(false);
     navigate("/");
   };

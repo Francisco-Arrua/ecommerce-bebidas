@@ -32,6 +32,10 @@ export default function Register() {
         throw new Error(data.mensaje || "Error al registrar usuario");
       }
 
+      if (!data.token) {
+        throw new Error("El servidor no devolvió el token de sesión. Volvé a desplegar el backend.");
+      }
+
       // Antes esto dependía 100% de la cookie: si el navegador la bloqueaba
       // (Safari/iOS y muchos mobile por default), el usuario quedaba
       // registrado en la DB pero nunca "entraba". Ahora guardamos el token
