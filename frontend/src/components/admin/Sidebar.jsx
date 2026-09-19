@@ -90,16 +90,14 @@ export default function Sidebar({ seccion, setSeccion }) {
   const obtenerEstiloItem = (idActivo) => ({
     display: "flex",
     alignItems: "center",
-    gap: "12px",
+    gap: "10px",
     width: "100%",
-    padding: "12px 16px",
-    borderRadius: "12px",
+    padding: "8px 12px", // Reducido de 12px 16px a 8px 12px para mayor densidad
+    borderRadius: "8px",
     border: "none",
-    fontSize: "14px",
+    fontSize: "13.5px",
     fontWeight: idActivo ? "600" : "500",
-    // Color de texto: azul premium para activo, gris sobrio para el reposo
     color: idActivo ? "#2563eb" : "#64748b", 
-    // Fondo: azul traslúcido soft para la sección seleccionada
     background: idActivo ? "rgba(37, 99, 235, 0.08)" : "transparent",
     cursor: "pointer",
     textAlign: "left",
@@ -113,15 +111,16 @@ export default function Sidebar({ seccion, setSeccion }) {
       style={{
         width: "240px",
         background: "#ffffff", 
-        minHeight: "100vh",
-        padding: "32px 16px",
-        borderRight: "1px solid #e2e8f0", // Línea divisoria clara y elegante
+        padding: "16px 12px", // Reducido el padding superior/inferior (antes 32px 16px)
+        borderRight: "1px solid #e2e8f0",
         display: "flex",
         flexDirection: "column",
         position: "sticky",
         top: 0,
         height: "100vh",
+        maxHeight: "100vh",
         boxSizing: "border-box",
+        overflowY: "auto", // Evita que se corte en laptops pequeñas
       }}
     >
       {/* Menú de Navegación */}
@@ -129,7 +128,7 @@ export default function Sidebar({ seccion, setSeccion }) {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: "6px",
+          gap: "2px", // Reducido de 6px a 2px para compactar el menú
           flex: 1,
         }}
       >
@@ -142,8 +141,8 @@ export default function Sidebar({ seccion, setSeccion }) {
               style={obtenerEstiloItem(esActivo)}
               onMouseEnter={(e) => {
                 if (!esActivo) {
-                  e.currentTarget.style.background = "#f1f5f9"; // Hover sutil gris de respiro
-                  e.currentTarget.style.color = "#0f172a"; // Texto se oscurece al enfocar
+                  e.currentTarget.style.background = "#f1f5f9";
+                  e.currentTarget.style.color = "#0f172a";
                 }
               }}
               onMouseLeave={(e) => {
@@ -159,8 +158,8 @@ export default function Sidebar({ seccion, setSeccion }) {
                   style={{
                     position: "absolute",
                     left: 0,
-                    top: "25%",
-                    height: "50%",
+                    top: "20%",
+                    height: "60%",
                     width: "3px",
                     background: "#2563eb",
                     borderRadius: "0 4px 4px 0",
@@ -187,7 +186,8 @@ export default function Sidebar({ seccion, setSeccion }) {
       {/* Footer del Sidebar */}
       <div
         style={{
-          paddingTop: "16px",
+          paddingTop: "12px",
+          marginTop: "12px",
           borderTop: "1px solid #f1f5f9",
           fontSize: "11px",
           color: "#94a3b8",

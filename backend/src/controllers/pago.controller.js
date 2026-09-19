@@ -5,6 +5,7 @@ import {
   obtenerClienteMP,
   obtenerWebhookSecretMP,
 } from "../config/mercadopago.config.js";
+import { obtenerPrecioVigente } from "../utils/precioProducto.js";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 const BACKEND_URL = process.env.BACKEND_URL; // debe ser una URL pública (https) para que MP pueda llamarla
@@ -101,7 +102,7 @@ export const crearPreferencia = async (req, res) => {
         );
       }
 
-      const precio = Number(producto.precio);
+      const precio = obtenerPrecioVigente(producto);
       totalProductosCalculado += precio * cantidad;
 
       itemsOrdenParaCrear.push({

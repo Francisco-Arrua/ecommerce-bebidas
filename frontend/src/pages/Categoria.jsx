@@ -1,5 +1,6 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { obtenerPrecioVigente } from "../utils/precioProducto";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -10,21 +11,32 @@ export default function Categoria() {
   const [cargando, setCargando] = useState(true);
 
   const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState("Todos");
+  const [subcategoriasDisponibles, setSubcategoriasDisponibles] = useState([]);
   const navigate = useNavigate();
-  const [limiteVisible, setLimiteVisible] = useState(42);
+  const [pagina, setPagina] = useState(1);
+  const [paginacion, setPaginacion] = useState({ total: 0, totalPages: 0 });
 
-  // Carga productos cada vez que cambia la categoría (id de la ruta)
+  // Carga solo una página de productos y las subcategorías de la categoría.
   useEffect(() => {
     const obtenerProductos = async () => {
       try {
         setCargando(true);
+        const subParam = searchParams.get("sub");
+        const params = new URLSearchParams({
+          categoria: id,
+          page: String(pagina),
+          limit: "28",
+          resumen: "true",
+        });
+        if (subParam) params.set("subcategoria", subParam);
+
         const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/productos?categoria=${id}`
+          `${import.meta.env.VITE_API_URL}/productos?${params.toString()}`
         );
         const data = await res.json();
 
-        setProductos(data);
-        setLimiteVisible(42);
+        setProductos(data.items || data);
+        setPaginacion({ total: data.total || 0, totalPages: data.totalPages || 1 });
       } catch (error) {
         console.error("Error cargando productos:", error);
       } finally {
@@ -32,10 +44,22 @@ export default function Categoria() {
       }
     };
 
+    const obtenerSubcategorias = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/subcategorias?categoriaId=${id}`);
+        const data = await res.json();
+        setSubcategoriasDisponibles(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error cargando subcategorías:", error);
+        setSubcategoriasDisponibles([]);
+      }
+    };
+
     if (id) {
       obtenerProductos();
+      obtenerSubcategorias();
     }
-  }, [id]);
+  }, [id, pagina, searchParams]);
 
   // Sincroniza la subcategoría seleccionada con el query param ?sub= de la URL.
   // Corre al montar Y cada vez que cambia sub, aunque sigamos en la misma
@@ -44,37 +68,20 @@ export default function Categoria() {
   useEffect(() => {
     const subParam = searchParams.get("sub");
     setSubcategoriaSeleccionada(subParam ? Number(subParam) : "Todos");
-    setLimiteVisible(42);
+    setPagina(1);
   }, [searchParams]);
 
   const subcategorias = [
     { id: "Todos", nombre: "Todos" },
-    ...Array.from(
-      new Map(
-        productos
-          .filter((p) => p.subcategoria?.id)
-          .map((p) => [p.subcategoria.id, { id: p.subcategoria.id, nombre: p.subcategoria.nombre }])
-      ).values()
-    ),
+    ...subcategoriasDisponibles,
   ];
 
-  const productosFiltrados =
-    subcategoriaSeleccionada === "Todos"
-      ? productos
-      : productos.filter(
-          (producto) => producto.subcategoria?.id === subcategoriaSeleccionada
-        );
-
-  const productosRenderizados = productosFiltrados.slice(0, limiteVisible);
-
-  const cargarMasProductos = () => {
-    setLimiteVisible((prev) => prev + 42);
-  };
+  const productosFiltrados = productos;
 
   // Cambia la subcategoría Y actualiza la URL, para que quede
   // compartible/recargable y el botón "atrás" del navegador funcione.
   const manejarCambioSubcategoria = (subId) => {
-    setLimiteVisible(42);
+    setPagina(1);
     if (subId === "Todos") {
       setSearchParams({});
     } else {
@@ -157,7 +164,7 @@ export default function Categoria() {
             ) : (
               <>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: "20px", marginTop: "32px" }}>
-                  {productosRenderizados.map((producto) => (
+                  {productosFiltrados.map((producto) => (
                     <div
                       key={producto.id}
                       onClick={() => navigate(`/producto/${producto.id}`)}
@@ -228,42 +235,33 @@ export default function Categoria() {
                           {producto.nombre}
                         </h4>
                         <h3 style={{ margin: 0, color: "#0f172a", fontSize: "16px", fontWeight: 900, letterSpacing: "-0.02em" }}>
-                          $ {Number(producto.precio).toLocaleString("es-AR")}
+                          $ {obtenerPrecioVigente(producto).toLocaleString("es-AR")}
                         </h3>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {productosFiltrados.length > limiteVisible && (
-                  <button
-                    onClick={cargarMasProductos}
-                    style={{
-                      display: "block",
-                      margin: "48px auto 0 auto",
-                      padding: "14px 32px",
-                      background: "#ffffff",
-                      color: "#0f172a",
-                      border: "1px solid #0f172a",
-                      borderRadius: "0px",
-                      fontWeight: "900",
-                      fontSize: "14px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#0f172a";
-                      e.currentTarget.style.color = "#ffffff";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#ffffff";
-                      e.currentTarget.style.color = "#0f172a";
-                    }}
-                  >
-                    Ver más productos ({productosFiltrados.length - limiteVisible} restantes)
-                  </button>
+                {paginacion.totalPages > 1 && (
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "16px", marginTop: "48px" }}>
+                    <button
+                      onClick={() => setPagina((actual) => Math.max(1, actual - 1))}
+                      disabled={pagina === 1}
+                      style={{ padding: "12px 20px", background: "#ffffff", color: "#0f172a", border: "1px solid #0f172a", fontWeight: 800, cursor: pagina === 1 ? "not-allowed" : "pointer", opacity: pagina === 1 ? 0.45 : 1 }}
+                    >
+                      Anterior
+                    </button>
+                    <span style={{ fontSize: "13px", fontWeight: 800, color: "#64748b" }}>
+                      Página {pagina} de {paginacion.totalPages}
+                    </span>
+                    <button
+                      onClick={() => setPagina((actual) => Math.min(paginacion.totalPages, actual + 1))}
+                      disabled={pagina >= paginacion.totalPages}
+                      style={{ padding: "12px 20px", background: "#0f172a", color: "#ffffff", border: "1px solid #0f172a", fontWeight: 800, cursor: pagina >= paginacion.totalPages ? "not-allowed" : "pointer", opacity: pagina >= paginacion.totalPages ? 0.45 : 1 }}
+                    >
+                      Siguiente
+                    </button>
+                  </div>
                 )}
               </>
             )}

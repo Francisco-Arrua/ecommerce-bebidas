@@ -19,6 +19,9 @@ export default function ProductosAdmin() {
 
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [subcategoriaFiltro, setSubcategoriaFiltro] = useState("");
+  const [pagina, setPagina] = useState(1);
+  const [totalProductos, setTotalProductos] = useState(0);
+  const PRODUCTOS_POR_PAGINA = 20;
 
   // Estado para las imágenes del formulario de creación
   const [imagenesSubidas, setImagenesSubidas] = useState([]);
@@ -49,6 +52,8 @@ export default function ProductosAdmin() {
     tieneTalles: false,
     activo: true,
     destacado: false,
+    enOferta: false,
+    precioOferta: "",
     talles: [],
     imagenes: [], 
   });
@@ -174,9 +179,20 @@ export default function ProductosAdmin() {
 
   const obtenerProductos = async () => {
     try {
-      const res = await fetch(`${API_URL}/productos`);
+      const params = new URLSearchParams({
+        admin: "true",
+        page: String(pagina),
+        limit: String(PRODUCTOS_POR_PAGINA),
+      });
+
+      if (busqueda.trim()) params.set("search", busqueda.trim());
+      if (categoriaFiltro) params.set("categoria", categoriaFiltro);
+      if (subcategoriaFiltro) params.set("subcategoria", subcategoriaFiltro);
+
+      const res = await fetch(`${API_URL}/productos?${params.toString()}`);
       const data = await res.json();
-      setProductos(data);
+      setProductos(data.items || data);
+      setTotalProductos(data.total ?? data.length ?? 0);
     } catch (error) {
       console.error(error);
     }
@@ -186,7 +202,7 @@ export default function ProductosAdmin() {
     obtenerProductos();
     obtenerCategorias();
     obtenerSubcategorias();
-  }, []);
+  }, [pagina, busqueda, categoriaFiltro, subcategoriaFiltro]);
 
   const handleChange = (e) => {
     const { name, type, checked, value } = e.target;
@@ -226,33 +242,18 @@ export default function ProductosAdmin() {
     }
   };
 
+  // Alterna el estado de oferta dentro del form de edición. Al desactivarla
+  // limpiamos el precio para no arrastrar un valor viejo si se vuelve a activar.
+  const alternarOfertaEdicion = () => {
+    setEditForm((prev) => ({
+      ...prev,
+      enOferta: !prev.enOferta,
+      precioOferta: !prev.enOferta ? prev.precioOferta : "",
+    }));
+  };
+
   const productosFiltradosYOrdenados = useMemo(() => {
-    let resultado = productos.filter((producto) =>
-      [
-        producto.nombre,
-        producto.marca,
-        producto.categoria?.nombre,
-        producto.subcategoria?.nombre,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(busqueda.toLowerCase())
-    );
-
-    if (categoriaFiltro) {
-      resultado = resultado.filter(
-        (p) => p.categoriaId === Number(categoriaFiltro)
-      );
-    }
-
-    if (subcategoriaFiltro) {
-      resultado = resultado.filter(
-        (p) => p.subcategoriaId === Number(subcategoriaFiltro)
-      );
-    }
-
-    const copia = [...resultado];
+    const copia = [...productos];
 
     switch (orden) {
       case "recientes":
@@ -278,7 +279,7 @@ export default function ProductosAdmin() {
     }
 
     return copia;
-  }, [productos, busqueda, categoriaFiltro, subcategoriaFiltro, orden]);
+  }, [productos, orden]);
 
   const crearProducto = async (e) => {
     e.preventDefault();
@@ -353,12 +354,27 @@ export default function ProductosAdmin() {
       tieneTalles: Boolean(producto.tieneTalles),
       activo: producto.activo !== false,
       destacado: Boolean(producto.destacado),
+      enOferta: Boolean(producto.enOferta),
+      precioOferta: producto.precioOferta != null ? String(producto.precioOferta) : "",
       talles: producto.talles?.map((talle) => ({ talle: talle.talle, stock: talle.stock })) || [],
       imagenes: producto.imagenes || [], 
     });
   };
 
   const guardarEdicion = async () => {
+    // Si está en oferta, el precio nuevo es obligatorio y tiene que ser menor al original
+    if (editForm.enOferta) {
+      const precioOfertaNumero = Number(editForm.precioOferta);
+      if (!editForm.precioOferta || Number.isNaN(precioOfertaNumero) || precioOfertaNumero <= 0) {
+        alert("Ingresá un precio de oferta válido.");
+        return;
+      }
+      if (precioOfertaNumero >= Number(editForm.precio)) {
+        alert("El precio de oferta debe ser menor al precio original.");
+        return;
+      }
+    }
+
     try {
       await fetch(`${API_URL}/productos/${editandoId}`, {
         method: "PUT",
@@ -373,6 +389,8 @@ export default function ProductosAdmin() {
           tieneTalles: editForm.tieneTalles,
           activo: editForm.activo,
           destacado: editForm.destacado,
+          enOferta: editForm.enOferta,
+          precioOferta: editForm.enOferta ? Number(editForm.precioOferta) : null,
           talles: editForm.talles
             .filter((talle) => talle.talle.trim())
             .map((talle) => ({ talle: talle.talle.trim(), stock: Number(talle.stock) })),
@@ -606,7 +624,7 @@ export default function ProductosAdmin() {
             </span>
             <div>
               <p style={{ margin: 0, color: "#64748b", fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Productos Catálogo</p>
-              <h3 style={{ margin: "2px 0 0 0", fontSize: "22px", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.02em" }}>{productos.length}</h3>
+              <h3 style={{ margin: "2px 0 0 0", fontSize: "22px", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.02em" }}>{totalProductos}</h3>
             </div>
           </div>
           
@@ -617,6 +635,16 @@ export default function ProductosAdmin() {
             <div>
               <p style={{ margin: 0, color: "#64748b", fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Stock Total General</p>
               <h3 style={{ margin: "2px 0 0 0", fontSize: "22px", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.02em" }}>{productos.reduce((total, p) => total + p.stock, 0)}</h3>
+            </div>
+          </div>
+
+          <div style={tarjetaMetricaEstilo}>
+            <span style={{ width: "40px", height: "40px", background: "#fff7ed", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", flexShrink: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20.59 13.41 12 22l-8.59-8.59a2 2 0 0 1 0-2.82L12 2l8.59 8.59a2 2 0 0 1 0 2.82Z"/><circle cx="8" cy="8" r="1.5"/></svg>
+            </span>
+            <div>
+              <p style={{ margin: 0, color: "#64748b", fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>En Oferta</p>
+              <h3 style={{ margin: "2px 0 0 0", fontSize: "22px", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.02em" }}>{productos.filter((p) => p.enOferta).length}</h3>
             </div>
           </div>
         </div>
@@ -686,6 +714,9 @@ export default function ProductosAdmin() {
               Registrar Producto en Catálogo
             </button>
           </form>
+          <p style={{ margin: "12px 0 0 0", fontSize: "12px", color: "#94a3b8" }}>
+            Las ofertas se activan desde "Editar" una vez creado el producto.
+          </p>
         </div>
 
         {/* FILTROS Y BUSCADOR */}
@@ -700,17 +731,17 @@ export default function ProductosAdmin() {
           </select>
 
           <div style={{ flex: 1, minWidth: "250px", position: "relative", display: "flex", alignItems: "center" }}>
-            <input type="text" placeholder="Buscar producto por nombre, marca o categoría..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} style={{ ...inputEstiloBase, width: "100%" }} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
+            <input type="text" placeholder="Buscar producto por nombre o marca..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} style={{ ...inputEstiloBase, width: "100%" }} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
           </div>
 
-          <select value={categoriaFiltro} onChange={(e) => { setCategoriaFiltro(e.target.value); setSubcategoriaFiltro(""); }} style={{ ...inputEstiloBase, minWidth: "180px" }} onFocus={manejarFocusInput} onBlur={manejarBlurInput}>
+          <select value={categoriaFiltro} onChange={(e) => { setCategoriaFiltro(e.target.value); setSubcategoriaFiltro(""); setPagina(1); }} style={{ ...inputEstiloBase, minWidth: "180px" }} onFocus={manejarFocusInput} onBlur={manejarBlurInput}>
             <option value="">Todas las categorías</option>
             {categorias.map((cat) => (
               <option key={cat.id} value={cat.id}>{cat.nombre}</option>
             ))}
           </select>
 
-          <select value={subcategoriaFiltro} onChange={(e) => setSubcategoriaFiltro(e.target.value)} style={{ ...inputEstiloBase, minWidth: "180px" }} onFocus={manejarFocusInput} onBlur={manejarBlurInput}>
+          <select value={subcategoriaFiltro} onChange={(e) => { setSubcategoriaFiltro(e.target.value); setPagina(1); }} style={{ ...inputEstiloBase, minWidth: "180px" }} onFocus={manejarFocusInput} onBlur={manejarBlurInput}>
             <option value="">Todas las subcategorías</option>
             {subcategorias
               .filter((sub) => !categoriaFiltro || sub.categoriaId === Number(categoriaFiltro))
@@ -741,10 +772,13 @@ export default function ProductosAdmin() {
 
                 {/* Información General */}
                 <div style={{ flex: 1, minWidth: "300px" }}>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px", flexWrap: "wrap" }}>
                     <p style={{ margin: 0, color: "#64748b", fontSize: "13px", fontWeight: 600, textTransform: "uppercase" }}>{producto.marca || "Sin Marca"}</p>
                     {producto.destacado && (
                       <span style={{ background: "#fef3c7", color: "#d97706", padding: "2px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700 }}>Destacado</span>
+                    )}
+                    {producto.enOferta && (
+                      <span style={{ background: "#ffedd5", color: "#c2410c", padding: "2px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700 }}>Oferta</span>
                     )}
                     {!producto.activo && (
                       <span style={{ background: "#f1f5f9", color: "#64748b", padding: "2px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700 }}>Inactivo</span>
@@ -758,7 +792,18 @@ export default function ProductosAdmin() {
                   <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", fontSize: "13px", color: "#475569", background: "#f8fafc", padding: "12px 16px", borderRadius: "14px", width: "fit-content", border: "1px solid #e2e8f0" }}>
                     <span><strong>Categoría:</strong> {producto.categoria?.nombre || "-"}</span>
                     <span><strong>Subcategoría:</strong> {producto.subcategoria?.nombre || "-"}</span>
-                    <span><strong>Precio:</strong> <strong style={{ color: "#0f172a" }}>${Number(producto.precio).toLocaleString("es-AR")}</strong></span>
+                    <span>
+                      <strong>Precio:</strong>{" "}
+                      {producto.enOferta ? (
+                        <>
+                          <span style={{ textDecoration: "line-through", color: "#94a3b8" }}>${Number(producto.precio).toLocaleString("es-AR")}</span>
+                          {" "}
+                          <strong style={{ color: "#c2410c" }}>${Number(producto.precioOferta).toLocaleString("es-AR")}</strong>
+                        </>
+                      ) : (
+                        <strong style={{ color: "#0f172a" }}>${Number(producto.precio).toLocaleString("es-AR")}</strong>
+                      )}
+                    </span>
                     <span>
                       <strong>Stock:</strong>{" "}
                       <strong style={{ color: producto.stock === 0 ? "#ef4444" : "#0f172a" }}>{producto.stock} uds.</strong>
@@ -822,6 +867,61 @@ export default function ProductosAdmin() {
                     </div>
 
                     {editForm.tieneTalles && <EditorTalles talles={editForm.talles} esEdicion />}
+
+                    {/* BLOQUE DE OFERTA */}
+                    <div
+                      style={{
+                        gridColumn: "1 / -1",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                        padding: "16px",
+                        borderRadius: "14px",
+                        background: editForm.enOferta ? "#fff7ed" : "#f8fafc",
+                        border: `1px solid ${editForm.enOferta ? "#fed7aa" : "#e2e8f0"}`,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                        <div>
+                          <label style={{ fontSize: "13px", fontWeight: 700, color: "#475569", display: "block" }}>Oferta especial</label>
+                          <span style={{ fontSize: "12px", color: "#64748b" }}>
+                            {editForm.enOferta
+                              ? "El producto se muestra en la home con precio rebajado."
+                              : "Definí un precio rebajado para mostrarlo en la sección de ofertas."}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={alternarOfertaEdicion}
+                          style={{
+                            ...botonAccionEstilo,
+                            background: editForm.enOferta ? "#ef4444" : "#f97316",
+                            color: "#ffffff",
+                            border: "none",
+                          }}
+                        >
+                          {editForm.enOferta ? "Quitar de oferta" : "Poner en oferta"}
+                        </button>
+                      </div>
+
+                      {editForm.enOferta && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxWidth: "220px" }}>
+                          <label style={{ fontSize: "12px", fontWeight: 700, color: "#9a3412" }}>Precio de oferta ($)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            name="precioOferta"
+                            value={editForm.precioOferta}
+                            onChange={handleEditChange}
+                            placeholder="Ej. 15999"
+                            style={inputEstiloBase}
+                            onFocus={manejarFocusInput}
+                            onBlur={manejarBlurInput}
+                          />
+                        </div>
+                      )}
+                    </div>
                     
                     <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
                       <label style={{ fontSize: "13px", fontWeight: 700, color: "#475569" }}>Cargar nuevas imágenes al producto</label>
@@ -849,6 +949,30 @@ export default function ProductosAdmin() {
             );
           })}
         </div>
+
+        {totalProductos > PRODUCTOS_POR_PAGINA && (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "16px", marginTop: "28px" }}>
+            <button
+              type="button"
+              disabled={pagina === 1}
+              onClick={() => setPagina((actual) => Math.max(1, actual - 1))}
+              style={{ ...botonAccionEstilo, opacity: pagina === 1 ? 0.45 : 1 }}
+            >
+              Anterior
+            </button>
+            <span style={{ color: "#64748b", fontSize: "13px", fontWeight: 700 }}>
+              Página {pagina} de {Math.ceil(totalProductos / PRODUCTOS_POR_PAGINA)}
+            </span>
+            <button
+              type="button"
+              disabled={pagina >= Math.ceil(totalProductos / PRODUCTOS_POR_PAGINA)}
+              onClick={() => setPagina((actual) => actual + 1)}
+              style={{ ...botonAccionEstilo, opacity: pagina >= Math.ceil(totalProductos / PRODUCTOS_POR_PAGINA) ? 0.45 : 1 }}
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
         
       </div>
     </div>

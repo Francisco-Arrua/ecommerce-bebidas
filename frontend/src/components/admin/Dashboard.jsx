@@ -86,9 +86,20 @@ export default function Dashboard() {
     position: "relative"
   };
 
-  const productosBajoStock = stats.productosDetalle.filter(
-    (producto) => producto.stock <= stockMinimo
-  );
+
+  const obtenerStockTotal = (producto) => {
+    if (producto.tieneTalles && Array.isArray(producto.talles)) {
+      return producto.talles.reduce((acc, item) => acc + (item.stock || 0), 0);
+    }
+    return producto.stock || 0;
+  };
+
+
+  const productosBajoStock = stats.productosDetalle.filter((producto) => {
+    const stockTotal = obtenerStockTotal(producto);
+    return stockTotal <= stockMinimo;
+  });
+
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 12px 40px 12px", fontFamily: "Inter, sans-serif" }}>
@@ -301,7 +312,9 @@ export default function Dashboard() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {productosBajoStock.map((producto) => {
-                const sinStock = producto.stock === 0;
+                const stockTotal = obtenerStockTotal(producto);
+                const sinStock = stockTotal === 0;
+
                 return (
                   <div
                     key={producto.id}
@@ -318,7 +331,9 @@ export default function Dashboard() {
                     }}
                   >
                     <div>
-                      <strong style={{ color: sinStock ? "#991b1b" : "#0f172a", fontSize: "14px", fontWeight: 600 }}>{producto.nombre}</strong>
+                      <strong style={{ color: sinStock ? "#991b1b" : "#0f172a", fontSize: "14px", fontWeight: 600 }}>
+                        {producto.nombre}
+                      </strong>
                       <div style={{ color: "#64748b", fontSize: "12px", marginTop: "2px", fontWeight: 500 }}>
                         {producto.categoria?.nombre || "-"} • {producto.subcategoria?.nombre || "-"}
                       </div>
@@ -334,7 +349,7 @@ export default function Dashboard() {
                       whiteSpace: "nowrap",
                       flexShrink: 0
                     }}>
-                      {sinStock ? "Sin Unidades" : `${producto.stock} disponibles`}
+                      {sinStock ? "Sin Unidades" : `${stockTotal} disponibles`}
                     </span>
                   </div>
                 );

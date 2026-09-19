@@ -3,6 +3,7 @@ import { CartContext } from "../context/CartContext";
 import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { obtenerPrecioVigente, tieneOfertaVigente } from "../utils/precioProducto";
 
 export default function Carrito() {
   const { carrito, eliminarProductoItem, vaciarMiCarrito, cargando } = useContext(CartContext);
@@ -11,7 +12,7 @@ export default function Carrito() {
   const itemsDelCarrito = Array.isArray(carrito) ? carrito : carrito?.items || [];
 
   const totalCompra = itemsDelCarrito.reduce((acc, item) => {
-    const precio = item.precio || item.Producto?.precio || item.producto?.precio || 0;
+    const precio = obtenerPrecioVigente(item.producto || item.Producto || item);
     return acc + (Number(precio) * item.cantidad);
   }, 0);
 
@@ -54,7 +55,9 @@ export default function Carrito() {
             <div style={{ background: "#ffffff", border: "1px solid #0f172a", padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
               {itemsDelCarrito.map((item) => {
                 const nombreProducto = item.nombre || item.Producto?.nombre || item.producto?.nombre || "Producto";
-                const precioProducto = item.precio || item.Producto?.precio || item.producto?.precio || 0;
+                const producto = item.producto || item.Producto || item;
+                const precioProducto = obtenerPrecioVigente(producto);
+                const precioOriginal = Number(producto.precio || 0);
                 
                 const talleProducto = 
                   (typeof item.talle === "object" ? item.talle?.talle || item.talle?.nombre : item.talle) ||
@@ -82,8 +85,13 @@ export default function Carrito() {
                           Talle: {talleProducto}
                         </span>
                       )}
-                      <p style={{ margin: 0, color: "#0f172a", fontWeight: 900, fontSize: "14px" }}>
+                      <p style={{ margin: 0, color: tieneOfertaVigente(producto) ? "#c2410c" : "#0f172a", fontWeight: 900, fontSize: "14px" }}>
                         $ {Number(precioProducto).toLocaleString("es-AR")}
+                        {tieneOfertaVigente(producto) && (
+                          <span style={{ marginLeft: "8px", color: "#94a3b8", textDecoration: "line-through", fontSize: "12px" }}>
+                            $ {precioOriginal.toLocaleString("es-AR")}
+                          </span>
+                        )}
                       </p>
                     </div>
 

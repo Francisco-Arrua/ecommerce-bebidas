@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { agregarPrecioVigente, obtenerPrecioVigente } from "../utils/precioProducto.js";
 
 // Helper para calcular stock dinámico del producto si tiene talles
 const formatearProducto = (producto) => {
@@ -10,7 +11,7 @@ const formatearProducto = (producto) => {
       : producto.stock;
 
   return {
-    ...producto,
+    ...agregarPrecioVigente(producto),
     stock: stockTotal,
   };
 };
@@ -19,7 +20,8 @@ const formatearProducto = (producto) => {
 const formatearItem = (item) => ({
   ...item,
   producto: formatearProducto(item.producto),
-  subtotal: Number(item.producto.precio) * item.cantidad,
+  precioFinal: obtenerPrecioVigente(item.producto),
+  subtotal: obtenerPrecioVigente(item.producto) * item.cantidad,
 });
 
 // Helper para devolver la estructura completa del carrito con totales

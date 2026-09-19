@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { obtenerPrecioVigente } from "../utils/precioProducto";
 
 export default function ProductosDestacados({ productos }) {
   const navigate = useNavigate();
@@ -181,7 +182,7 @@ export default function ProductosDestacados({ productos }) {
                     letterSpacing: "-0.02em"
                   }}
                 >
-                  $ {Number(producto.precio).toLocaleString("es-AR")}
+                  $ {obtenerPrecioVigente(producto).toLocaleString("es-AR")}
                 </h3>
               </div>
             </div>

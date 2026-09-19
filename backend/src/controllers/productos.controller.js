@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { agregarPrecioVigente } from "../utils/precioProducto.js";
 
 const capitalizar = (texto) => {
   if (!texto) return null;
@@ -22,15 +23,34 @@ const formatearProducto = (producto) => {
       : producto.stock;
 
   return {
-    ...producto,
+    ...agregarPrecioVigente(producto),
     stock: stockTotal,
+    // El precio de oferta viene como Decimal de Prisma; lo normalizamos a Number
+    // (o null si el producto no está en oferta) para que el frontend lo use directo.
+    precioOferta:
+      producto.precioOferta !== null && producto.precioOferta !== undefined
+        ? Number(producto.precioOferta)
+        : null,
   };
 };
 
 // GET /productos
 export const getProductos = async (req, res) => {
   try {
-    const { search, categoria } = req.query;
+    const {
+      search,
+      categoria,
+      subcategoria,
+      destacado,
+      enOferta,
+      activo,
+      admin,
+      resumen,
+    } = req.query;
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limitSolicitado = Number(req.query.limit);
+    const usaPaginacion = Boolean(req.query.page || req.query.limit);
+    const limit = Math.min(100, Math.max(1, Number.isFinite(limitSolicitado) && limitSolicitado > 0 ? limitSolicitado : 20));
 
     const where = {};
 
@@ -55,22 +75,54 @@ export const getProductos = async (req, res) => {
       where.categoriaId = Number(categoria);
     }
 
-    const productos = await prisma.producto.findMany({
-      where,
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        categoria: true,
-        subcategoria: true,
-        imagenes: {
-          orderBy: { orden: "asc" },
-        },
-        talles: true,
-      },
-    });
+    if (subcategoria) {
+      where.subcategoriaId = Number(subcategoria);
+    }
 
-    res.json(productos.map(formatearProducto));
+    if (destacado !== undefined) {
+      where.destacado = destacado === "true";
+    }
+
+    if (enOferta !== undefined) {
+      where.enOferta = enOferta === "true";
+    }
+
+    if (activo !== undefined) {
+      where.activo = activo === "true";
+    }
+
+    const include = {
+      categoria: true,
+      subcategoria: true,
+      imagenes: resumen === "true" && admin !== "true"
+        ? { orderBy: { orden: "asc" }, take: 1 }
+        : { orderBy: { orden: "asc" } },
+      talles: true,
+    };
+
+    const [productos, total] = await Promise.all([
+      prisma.producto.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        ...(usaPaginacion ? { skip: (page - 1) * limit, take: limit } : {}),
+        include,
+      }),
+      usaPaginacion ? prisma.producto.count({ where }) : Promise.resolve(null),
+    ]);
+
+    const items = productos.map(formatearProducto);
+
+    if (usaPaginacion) {
+      return res.json({
+        items,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      });
+    }
+
+    res.json(items);
   } catch (error) {
     console.error("Error al obtener productos:", error);
     res.status(500).json({ mensaje: "Error al obtener productos" });
@@ -147,9 +199,16 @@ export const crearProducto = async (req, res) => {
       tieneTalles = false,
       destacado = false,
       activo = true,
+      enOferta = false,
+      precioOferta = null,
       talles = [],
       imagenes: rawImagenes = [],
     } = req.body;
+
+    // Si se manda a crear directamente en oferta, exigimos un precio de oferta válido
+    if (enOferta && (precioOferta === null || precioOferta === undefined || Number(precioOferta) <= 0)) {
+      return res.status(400).json({ mensaje: "Debés indicar un precio de oferta válido" });
+    }
 
     const listaImagenes = parsearImagenes(rawImagenes);
     const listaTalles = parsearTalles(talles);
@@ -164,6 +223,8 @@ export const crearProducto = async (req, res) => {
         precio: Number(precio),
         activo: Boolean(activo),
         destacado: Boolean(destacado),
+        enOferta: Boolean(enOferta),
+        precioOferta: enOferta ? Number(precioOferta) : null,
         stock: tieneTalles ? 0 : Number(stock || 0),
         tieneTalles: Boolean(tieneTalles),
 
@@ -218,9 +279,16 @@ export const actualizarProducto = async (req, res) => {
       tieneTalles,
       destacado,
       activo,
+      enOferta,
+      precioOferta,
       talles,
       imagenes: rawImagenes,
     } = req.body;
+
+    // Si se está activando la oferta, exigimos un precio de oferta válido
+    if (enOferta && (precioOferta === undefined || precioOferta === null || Number(precioOferta) <= 0)) {
+      return res.status(400).json({ mensaje: "Debés indicar un precio de oferta válido" });
+    }
 
     const idProducto = Number(id);
     const tieneImagenesDefinidas = rawImagenes !== undefined;
@@ -228,6 +296,17 @@ export const actualizarProducto = async (req, res) => {
 
     const tieneTallesDefinidos = talles !== undefined;
     const listaTalles = tieneTallesDefinidos ? parsearTalles(talles) : [];
+
+    // enOferta manda: si viene definido, se recalcula precioOferta en consecuencia
+    // (true -> guarda el precio nuevo, false -> lo limpia). Si no viene enOferta
+    // pero sí precioOferta suelto, se actualiza el precio sin tocar el flag.
+    let dataOferta = {};
+    if (enOferta !== undefined) {
+      dataOferta.enOferta = Boolean(enOferta);
+      dataOferta.precioOferta = enOferta ? Number(precioOferta) : null;
+    } else if (precioOferta !== undefined) {
+      dataOferta.precioOferta = precioOferta !== null ? Number(precioOferta) : null;
+    }
 
     const productoActualizado = await prisma.$transaction(
       async (tx) => {
@@ -258,6 +337,7 @@ export const actualizarProducto = async (req, res) => {
             destacado: destacado !== undefined ? Boolean(destacado) : undefined,
             tieneTalles: tieneTalles !== undefined ? Boolean(tieneTalles) : undefined,
             stock: tieneTalles ? 0 : (stock !== undefined ? Number(stock) : undefined),
+            ...dataOferta,
 
             ...(tieneImagenesDefinidas && listaImagenes.length > 0 && {
               imagenes: {

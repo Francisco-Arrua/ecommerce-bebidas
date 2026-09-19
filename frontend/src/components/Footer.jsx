@@ -73,7 +73,7 @@ export default function Footer() {
               </span>
             </div>
             <p style={{ color: "#737373", fontSize: "14px", lineHeight: "1.6", margin: 0, maxWidth: "300px" }}>
-              Tu tienda de confianza con la mejor selección de productos y atención personalizada vía WhatsApp.
+              Tu tienda de confianza con la mejor selección de productos.
             </p>
           </div>
 
@@ -192,7 +192,7 @@ export default function Footer() {
             © 2026 {configuracion?.nombreTienda || "Tienda"}. Todos los derechos reservados.
           </p>
           <p style={{ margin: 0, color: "#404040", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-            Desarrollado por: <a href="https://instagram.com/arrua.franciscoo" target="_blank" rel="noopener noreferrer" style={{ color: "#ffffff", textDecoration: "underline" }}>Enlace aquí</a>
+            Desarrollado por: <a href="https://instagram.com/deff.developments" target="_blank" rel="noopener noreferrer" style={{ color: "#ffffff", textDecoration: "underline" }}>Enlace aquí</a>
           </p>
         </div>
       </div>

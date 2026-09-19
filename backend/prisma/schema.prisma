@@ -90,12 +90,16 @@ model Producto {
   activo         Boolean          @default(true)
   destacado      Boolean          @default(false)
 
+  enOferta       Boolean          @default(false)
+  precioOferta   Decimal?         @db.Decimal(12, 2)
+
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
   @@index([categoriaId])
   @@index([subcategoriaId])
   @@index([activo, destacado])
+  @@index([activo, enOferta])
 }
 
 model TalleProducto {

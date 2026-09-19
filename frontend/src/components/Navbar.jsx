@@ -15,7 +15,7 @@ export default function Navbar() {
   const [busqueda, setBusqueda] = useState("");
 
   const [categorias, setCategorias] = useState([]);
-  const [subcategorias, setSubcategorias] = useState([]); 
+  const [subcategorias, setSubcategorias] = useState([]);
   const [configuracion, setConfiguracion] = useState(null);
   const [paginas, setPaginas] = useState([]);
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
@@ -33,6 +33,8 @@ export default function Navbar() {
 
   const [mostrarCategoriasDesktop, setMostrarCategoriasDesktop] = useState(false);
   const [mostrarCategoriasMovil, setMostrarCategoriasMovil] = useState(false);
+  const [categoriaDesktopAbierta, setCategoriaDesktopAbierta] = useState(null);
+  const [categoriaMovilAbierta, setCategoriaMovilAbierta] = useState(null);
 
   const API_URL = import.meta.env.VITE_API_URL;
   
@@ -95,19 +97,29 @@ export default function Navbar() {
     obtenerPaginas();
   }, [API_URL]);
 
-  // 3. Cargar subcategorías si hay una sola categoría
+  // 3. Cargar todas las subcategorías para construir el menú por categoría
   useEffect(() => {
-    if (categorias.length === 1) {
-      const obtenerSubcategorias = async () => {
-        try {
-          const res = await fetch(`${API_URL}/subcategorias?categoriaId=${categorias[0].id}`);
-          const data = await res.json();
-          setSubcategorias(data);
-        } catch (e) { console.error(e); }
-      };
-      obtenerSubcategorias();
-    }
-  }, [categorias, API_URL]);
+    const obtenerSubcategorias = async () => {
+      try {
+        const res = await fetch(`${API_URL}/subcategorias`);
+        const data = await res.json();
+        setSubcategorias(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error(e);
+        setSubcategorias([]);
+      }
+    };
+
+    obtenerSubcategorias();
+  }, [API_URL]);
+
+  const subcategoriasDe = (categoriaId) =>
+    subcategorias.filter((sub) => Number(sub.categoriaId) === Number(categoriaId));
+
+  const navegarCategoria = (categoriaId, cerrarMenu) => {
+    navigate(`/categoria/${categoriaId}`);
+    cerrarMenu();
+  };
 
   // 4. Manejar el comportamiento del scroll para ocultar el Navbar
   useEffect(() => {
@@ -132,8 +144,6 @@ export default function Navbar() {
     window.addEventListener("scroll", manejarScroll, { passive: true });
     return () => window.removeEventListener("scroll", manejarScroll);
   }, []);
-
-  const esCategoriaUnica = categorias.length === 1;
 
   return (
   <header
@@ -531,36 +541,57 @@ export default function Navbar() {
                   zIndex: 110,
                 }}
               >
-                {esCategoriaUnica
-                  ? subcategorias.map((sub) => (
+                {categorias.map((categoria) => {
+                  const subcategoriasCategoria = subcategoriasDe(categoria.id);
+                  const tieneSubcategorias = subcategoriasCategoria.length > 0;
+                  const estaAbierta = categoriaDesktopAbierta === categoria.id;
+
+                  return (
+                    <div key={categoria.id}>
                       <div
-                        key={sub.id}
                         onClick={() => {
-                          navigate(`/categoria/${categorias[0].id}?sub=${sub.id}`);
-                          setMostrarCategoriasDesktop(false);
+                          if (tieneSubcategorias) {
+                            setCategoriaDesktopAbierta(estaAbierta ? null : categoria.id);
+                          } else {
+                            navegarCategoria(categoria.id, () => setMostrarCategoriasDesktop(false));
+                          }
                         }}
-                        style={{ padding: "12px 20px", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: "#a1a1aa", transition: "all 0.2s" }}
+                        style={{ padding: "12px 20px", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: estaAbierta ? "#ffffff" : "#a1a1aa", transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "24px" }}
                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.06)"; e.currentTarget.style.color = "#ffffff"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#a1a1aa"; }}
-                      >
-                        {sub.nombre.toUpperCase()}
-                      </div>
-                    ))
-                  : categorias.map((categoria) => (
-                      <div
-                        key={categoria.id}
-                        onClick={() => {
-                          navigate(`/categoria/${categoria.id}`);
-                          setMostrarCategoriasDesktop(false);
-                        }}
-                        style={{ padding: "12px 20px", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: "#a1a1aa", transition: "all 0.2s" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.06)"; e.currentTarget.style.color = "#ffffff"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#a1a1aa"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = estaAbierta ? "#ffffff" : "#a1a1aa"; }}
                       >
                         {categoria.nombre.toUpperCase()}
+                        {tieneSubcategorias && <span>{estaAbierta ? "-" : "+"}</span>}
                       </div>
-                    ))
-                }
+
+                      {tieneSubcategorias && estaAbierta && (
+                        <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                          <div
+                            onClick={() => navegarCategoria(categoria.id, () => setMostrarCategoriasDesktop(false))}
+                            style={{ padding: "10px 32px", cursor: "pointer", fontSize: "12px", color: "#ffffff", fontWeight: 700 }}
+                          >
+                            VER TODO
+                          </div>
+                          {subcategoriasCategoria.map((sub) => (
+                            <div
+                              key={sub.id}
+                              onClick={() => {
+                                navigate(`/categoria/${categoria.id}?sub=${sub.id}`);
+                                setMostrarCategoriasDesktop(false);
+                                setCategoriaDesktopAbierta(null);
+                              }}
+                              style={{ padding: "10px 32px", cursor: "pointer", fontSize: "12px", fontWeight: 500, color: "#a1a1aa", transition: "all 0.2s" }}
+                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.06)"; e.currentTarget.style.color = "#ffffff"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#a1a1aa"; }}
+                            >
+                              {sub.nombre.toUpperCase()}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -628,34 +659,61 @@ export default function Navbar() {
             
             {mostrarCategoriasMovil && (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingLeft: "16px", marginTop: "10px" }}>
-                {esCategoriaUnica
-                  ? subcategorias.map((sub) => (
-                      <span 
-                        key={sub.id} 
-                        onClick={() => { 
-                          navigate(`/categoria/${categorias[0].id}?sub=${sub.id}`); 
-                          setMenuMovilAbierto(false); 
-                          setMostrarCategoriasMovil(false);
+                {categorias.map((categoria) => {
+                  const subcategoriasCategoria = subcategoriasDe(categoria.id);
+                  const tieneSubcategorias = subcategoriasCategoria.length > 0;
+                  const estaAbierta = categoriaMovilAbierta === categoria.id;
+
+                  return (
+                    <div key={categoria.id}>
+                      <span
+                        onClick={() => {
+                          if (tieneSubcategorias) {
+                            setCategoriaMovilAbierta(estaAbierta ? null : categoria.id);
+                          } else {
+                            navegarCategoria(categoria.id, () => {
+                              setMenuMovilAbierto(false);
+                              setMostrarCategoriasMovil(false);
+                            });
+                          }
                         }}
-                        style={{ color: "#a1a1aa", fontSize: "13px", cursor: "pointer" }}
+                        style={{ color: estaAbierta ? "#ffffff" : "#a1a1aa", fontSize: "13px", fontWeight: 700, cursor: "pointer", display: "flex", justifyContent: "space-between", padding: "3px 0" }}
                       >
-                        {sub.nombre.toUpperCase()}
+                        {categoria.nombre.toUpperCase()}
+                        {tieneSubcategorias && <span>{estaAbierta ? "-" : "+"}</span>}
                       </span>
-                    ))
-                  : categorias.map((cat) => (
-                      <span 
-                        key={cat.id} 
-                        onClick={() => { 
-                          navigate(`/categoria/${cat.id}`); 
-                          setMenuMovilAbierto(false); 
-                          setMostrarCategoriasMovil(false);
-                        }}
-                        style={{ color: "#a1a1aa", fontSize: "13px", cursor: "pointer" }}
-                      >
-                        {cat.nombre.toUpperCase()}
-                      </span>
-                    ))
-                }
+
+                      {tieneSubcategorias && estaAbierta && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingLeft: "16px", marginTop: "10px" }}>
+                          <span
+                            onClick={() => navegarCategoria(categoria.id, () => {
+                              setMenuMovilAbierto(false);
+                              setMostrarCategoriasMovil(false);
+                              setCategoriaMovilAbierta(null);
+                            })}
+                            style={{ color: "#ffffff", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
+                          >
+                            VER TODO
+                          </span>
+                          {subcategoriasCategoria.map((sub) => (
+                            <span
+                              key={sub.id}
+                              onClick={() => {
+                                navigate(`/categoria/${categoria.id}?sub=${sub.id}`);
+                                setMenuMovilAbierto(false);
+                                setMostrarCategoriasMovil(false);
+                                setCategoriaMovilAbierta(null);
+                              }}
+                              style={{ color: "#a1a1aa", fontSize: "12px", cursor: "pointer" }}
+                            >
+                              {sub.nombre.toUpperCase()}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

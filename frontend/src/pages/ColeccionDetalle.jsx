@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { obtenerPrecioVigente } from "../utils/precioProducto";
 
 export default function ColeccionDetalle() {
   const { id } = useParams();
@@ -128,7 +129,7 @@ export default function ColeccionDetalle() {
                       {producto.nombre}
                     </h4>
                     <h3 style={{ margin: 0, color: "#0f172a", fontSize: "16px", fontWeight: 900 }}>
-                      $ {Number(producto.precio).toLocaleString("es-AR")}
+                      $ {obtenerPrecioVigente(producto).toLocaleString("es-AR")}
                     </h3>
                   </div>
                 </div>

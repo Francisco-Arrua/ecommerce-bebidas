@@ -1,5 +1,6 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { obtenerPrecioVigente } from "../utils/precioProducto";
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
@@ -186,7 +187,7 @@ export default function Buscados() {
                       {producto.nombre}
                     </h4>
                     <h3 style={{ margin: 0, color: "#0b1d33", fontSize: "17px", fontWeight: 700 }}>
-                      $ {Number(producto.precio).toLocaleString("es-AR")}
+                      $ {obtenerPrecioVigente(producto).toLocaleString("es-AR")}
                     </h3>
                   </div>
                 </div>

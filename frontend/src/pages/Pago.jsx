@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { obtenerPrecioVigente } from "../utils/precioProducto";
 
 export default function Pago() {
   const { carrito } = useContext(CartContext);
@@ -16,7 +17,7 @@ export default function Pago() {
   const itemsDelCarrito = Array.isArray(carrito) ? carrito : carrito?.items || [];
 
   const totalCompra = itemsDelCarrito.reduce((acc, item) => {
-    const precio = item.precio || item.Producto?.precio || item.producto?.precio || 0;
+    const precio = obtenerPrecioVigente(item.producto || item.Producto || item);
     return acc + Number(precio) * item.cantidad;
   }, 0);
 
@@ -115,7 +116,7 @@ export default function Pago() {
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {itemsDelCarrito.map((item) => {
                 const nombre = item.nombre || item.Producto?.nombre || item.producto?.nombre;
-                const precio = item.precio || item.Producto?.precio || item.producto?.precio || 0;
+                const precio = obtenerPrecioVigente(item.producto || item.Producto || item);
                 return (
                   <div key={item.id || item.productoId} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
                     <span>{nombre} x{item.cantidad}</span>

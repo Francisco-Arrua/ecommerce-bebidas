@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { obtenerPrecioVigente } from "../utils/precioProducto.js";
 
 // Crear Orden + Dirección de Envío (Formulario de Checkout)
 export const crearOrden = async (req, res) => {
@@ -75,7 +76,7 @@ export const crearOrden = async (req, res) => {
           }
         }
 
-        const precio = Number(producto.precio);
+        const precio = obtenerPrecioVigente(producto);
         totalProductosCalculado += precio * cantidad;
 
         // Guardar Snapshots inalterables
