@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { deleteCloudinaryResourcesByUrls } from "../utils/cloudinaryCleanup.js";
 import { agregarPrecioVigente } from "../utils/precioProducto.js";
 
 const capitalizar = (texto) => {
@@ -310,21 +311,28 @@ export const actualizarProducto = async (req, res) => {
 
     const productoActualizado = await prisma.$transaction(
       async (tx) => {
-        // 1. Eliminar relaciones previas solo si se enviaron nuevas listas
+        let imagenesPrevias = [];
+
+        if (tieneImagenesDefinidas) {
+          const productoActual = await tx.producto.findUnique({
+            where: { id: idProducto },
+            include: { imagenes: true },
+          });
+
+          imagenesPrevias = productoActual?.imagenes?.map((img) => img.url) || [];
+
+          await tx.imagenProducto.deleteMany({
+            where: { productoId: idProducto },
+          });
+        }
+
         if (tieneTallesDefinidos) {
           await tx.talleProducto.deleteMany({
             where: { productoId: idProducto },
           });
         }
 
-        if (tieneImagenesDefinidas) {
-          await tx.imagenProducto.deleteMany({
-            where: { productoId: idProducto },
-          });
-        }
-
-        // 2. Actualizar producto y recrear relaciones
-        return await tx.producto.update({
+        const producto = await tx.producto.update({
           where: { id: idProducto },
           data: {
             nombre: nombre ? capitalizar(nombre) : undefined,
@@ -367,9 +375,16 @@ export const actualizarProducto = async (req, res) => {
             talles: true,
           },
         });
+
+        return producto;
       },
       { maxWait: 5000, timeout: 10000 }
     );
+
+    if (tieneImagenesDefinidas && imagenesPrevias.length > 0) {
+      const urlsAEliminar = imagenesPrevias.filter((url) => !listaImagenes.some((img) => (typeof img === "string" ? img : img.url) === url));
+      await deleteCloudinaryResourcesByUrls(urlsAEliminar);
+    }
 
     res.json(formatearProducto(productoActualizado));
   } catch (error) {
@@ -383,11 +398,23 @@ export const eliminarProducto = async (req, res) => {
   try {
     const { id } = req.params;
 
+    const producto = await prisma.producto.findUnique({
+      where: { id: Number(id) },
+      include: { imagenes: true },
+    });
+
+    if (!producto) {
+      return res.status(404).json({ mensaje: "Producto no encontrado" });
+    }
+
     await prisma.producto.delete({
       where: {
         id: Number(id),
       },
     });
+
+    const urls = producto.imagenes.map((img) => img.url);
+    await deleteCloudinaryResourcesByUrls(urls);
 
     res.json({ mensaje: "Producto eliminado correctamente" });
   } catch (error) {

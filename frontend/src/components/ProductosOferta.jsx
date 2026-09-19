@@ -9,15 +9,19 @@ export default function ProductosOferta({ productos }) {
   return (
     <section
       style={{
-        maxWidth: "1400px",
-        margin: "60px auto",
-        padding: "0 24px",
+        width: "100%",        // Ocupa todo el ancho disponible
+        maxWidth: "100%",     // Elimina la restricción de 1400px
+        margin: "60px 0",     // Mantiene el margen vertical y remueve el centrado lateral
+        padding: "0",         // Quita el relleno exterior para pegar a los bordes
         fontFamily: "Inter, sans-serif",
+        boxSizing: "border-box",
       }}
     >
       <h2
         style={{
           marginBottom: "24px",
+          paddingLeft: "16px", // Margen interno lateral para alinear el título
+          paddingRight: "16px",
           fontSize: "24px",
           fontWeight: 900,
           color: "#0f172a",
@@ -35,6 +39,8 @@ export default function ProductosOferta({ productos }) {
           gap: "20px",
           overflowX: "auto",
           scrollBehavior: "smooth",
+          paddingLeft: "16px",  // Espacio inicial antes de la primera tarjeta
+          paddingRight: "16px", // Espacio final después de la última tarjeta
           paddingBottom: "16px",
           scrollbarWidth: "none",
           WebkitOverflowScrolling: "touch",

@@ -192,7 +192,7 @@ export default function Footer() {
             © 2026 {configuracion?.nombreTienda || "Tienda"}. Todos los derechos reservados.
           </p>
           <p style={{ margin: 0, color: "#404040", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-            Desarrollado por: <a href="https://instagram.com/deff.developments" target="_blank" rel="noopener noreferrer" style={{ color: "#ffffff", textDecoration: "underline" }}>Enlace aquí</a>
+            Desarrollado por: <a href="https://instagram.com/deff.studios" target="_blank" rel="noopener noreferrer" style={{ color: "#ffffff", textDecoration: "underline" }}>Enlace aquí</a>
           </p>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { deleteCloudinaryResourceByUrl } from "../utils/cloudinaryCleanup.js";
 
 export const getSlides = async (
   req,
@@ -57,6 +58,16 @@ export const actualizarSlide = async (
     orden,
   } = req.body;
 
+  const slideActual = await prisma.heroSlide.findUnique({
+    where: { id: Number(id) },
+  });
+
+  if (!slideActual) {
+    return res.status(404).json({ mensaje: "Slide no encontrado" });
+  }
+
+  const nuevaImagen = imagen === "" ? null : imagen;
+
   const slide =
     await prisma.heroSlide.update({
       where: {
@@ -67,10 +78,14 @@ export const actualizarSlide = async (
         subtitulo,
         textoBoton,
         linkBoton,
-        imagen,
+        imagen: nuevaImagen,
         orden: Number(orden),
       },
     });
+
+  if (slideActual.imagen && slideActual.imagen !== nuevaImagen) {
+    await deleteCloudinaryResourceByUrl(slideActual.imagen);
+  }
 
   res.json(slide);
 };
@@ -81,11 +96,25 @@ export const eliminarSlide = async (
 ) => {
   const { id } = req.params;
 
+  const slide = await prisma.heroSlide.findUnique({
+    where: {
+      id: Number(id),
+    },
+  });
+
+  if (!slide) {
+    return res.status(404).json({ mensaje: "Slide no encontrado" });
+  }
+
   await prisma.heroSlide.delete({
     where: {
       id: Number(id),
     },
   });
+
+  if (slide.imagen) {
+    await deleteCloudinaryResourceByUrl(slide.imagen);
+  }
 
   res.json({
     mensaje: "Slide eliminado",

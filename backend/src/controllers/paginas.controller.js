@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { deleteCloudinaryResourceByUrl } from "../utils/cloudinaryCleanup.js";
 
 export const getPaginas = async (
   req,
@@ -91,6 +92,16 @@ export const editarPagina = async (req, res) => {
   try {
     const { titulo, slug, contenido, imagen, visibleEnMenu, orden } = req.body;
 
+    const paginaActual = await prisma.paginaContenido.findUnique({
+      where: { id: Number(req.params.id) },
+    });
+
+    if (!paginaActual) {
+      return res.status(404).json({ mensaje: "Página no encontrada" });
+    }
+
+    const nuevaImagen = imagen === "" ? null : imagen;
+
     const pagina = await prisma.paginaContenido.update({
       where: {
         id: Number(req.params.id),
@@ -99,11 +110,15 @@ export const editarPagina = async (req, res) => {
         titulo,
         slug,
         contenido,
-        imagen: imagen === "" ? null : imagen,
+        imagen: nuevaImagen,
         visibleEnMenu: Boolean(visibleEnMenu),
         orden: Number(orden) || 0,
       },
     });
+
+    if (paginaActual.imagen && paginaActual.imagen !== nuevaImagen) {
+      await deleteCloudinaryResourceByUrl(paginaActual.imagen);
+    }
 
     res.json(pagina);
   } catch (error) {
@@ -117,13 +132,25 @@ export const editarPagina = async (req, res) => {
 export const eliminarPagina =
   async (req, res) => {
     try {
-      await prisma.paginaContenido.delete({
+      const pagina = await prisma.paginaContenido.findUnique({
         where: {
-          id: Number(
-            req.params.id
-          ),
+          id: Number(req.params.id),
         },
       });
+
+      if (!pagina) {
+        return res.status(404).json({ mensaje: "Página no encontrada" });
+      }
+
+      await prisma.paginaContenido.delete({
+        where: {
+          id: Number(req.params.id),
+        },
+      });
+
+      if (pagina.imagen) {
+        await deleteCloudinaryResourceByUrl(pagina.imagen);
+      }
 
       res.json({
         mensaje:

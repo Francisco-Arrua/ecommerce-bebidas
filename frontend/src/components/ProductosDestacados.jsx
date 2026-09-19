@@ -9,15 +9,19 @@ export default function ProductosDestacados({ productos }) {
   return (
     <section
       style={{
-        maxWidth: "1400px",
-        margin: "60px auto",
-        padding: "0 24px",
+        width: "100%",        // Ocupa todo el ancho disponible
+        maxWidth: "100%",     // Elimina la restricción de 1400px
+        margin: "60px 0",     // Mantiene el margen vertical pero elimina el centrado/margen lateral
+        padding: "0",         // Elimina el relleno lateral para pegar el contenido a los bordes
         fontFamily: "Inter, sans-serif",
+        boxSizing: "border-box",
       }}
     >
       <h2
         style={{
           marginBottom: "24px",
+          paddingLeft: "16px", // Mantiene un pequeño margen interno solo en el título si deseas que no quede pegado al borde del viewport
+          paddingRight: "16px",
           fontSize: "24px",
           fontWeight: 900,
           color: "#0f172a",
@@ -35,15 +39,14 @@ export default function ProductosDestacados({ productos }) {
           gap: "20px",
           overflowX: "auto",
           scrollBehavior: "smooth",
+          paddingLeft: "16px",  // Permite que la primera tarjeta empiece con un margen cómodo
+          paddingRight: "16px", // Permite que la última tarjeta tenga espacio al final del scroll
           paddingBottom: "16px",
           scrollbarWidth: "none", 
           WebkitOverflowScrolling: "touch",
         }}
       >
         {productos
-          // ✅ FIX: antes solo filtraba por "destacado", así que un producto
-          // oculto (activo: false) que estuviera marcado como destacado
-          // igual se mostraba en la home. Ahora también exige activo === true.
           .filter((producto) => producto.destacado && producto.activo)
           .slice(0, 12)
           .map((producto) => (
@@ -52,7 +55,7 @@ export default function ProductosDestacados({ productos }) {
               onClick={() => navigate(`/producto/${producto.id}`)}
               style={{
                 background: "#ffffff",
-                borderRadius: "0px", // Esquinas rectas Adidas style
+                borderRadius: "0px",
                 overflow: "hidden",
                 cursor: "pointer",
                 border: "1px solid #e2e8f0",

@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { deleteCloudinaryResourceByUrl } from "../utils/cloudinaryCleanup.js";
 
 export const getBanners = async (req, res) => {
   const banners = await prisma.banner.findMany({
@@ -46,6 +47,17 @@ export const actualizarBanner = async (req, res) => {
     orden,
   } = req.body;
 
+  const bannerActual = await prisma.banner.findUnique({
+    where: { id: Number(id) },
+  });
+
+  if (!bannerActual) {
+    return res.status(404).json({ mensaje: "Banner no encontrado" });
+  }
+
+  const imagenActual = bannerActual.imagen;
+  const nuevaImagen = imagen === "" ? null : imagen;
+
   const banner = await prisma.banner.update({
     where: {
       id: Number(id),
@@ -53,12 +65,16 @@ export const actualizarBanner = async (req, res) => {
     data: {
       titulo,
       subtitulo,
-      imagen,
+      imagen: nuevaImagen,
       colorInicio,
       colorFin,
       orden: Number(orden) || 0,
     },
   });
+
+  if (imagenActual && imagenActual !== nuevaImagen) {
+    await deleteCloudinaryResourceByUrl(imagenActual);
+  }
 
   res.json(banner);
 };
@@ -66,11 +82,25 @@ export const actualizarBanner = async (req, res) => {
 export const eliminarBanner = async (req, res) => {
   const { id } = req.params;
 
+  const banner = await prisma.banner.findUnique({
+    where: {
+      id: Number(id),
+    },
+  });
+
+  if (!banner) {
+    return res.status(404).json({ mensaje: "Banner no encontrado" });
+  }
+
   await prisma.banner.delete({
     where: {
       id: Number(id),
     },
   });
+
+  if (banner.imagen) {
+    await deleteCloudinaryResourceByUrl(banner.imagen);
+  }
 
   res.json({
     mensaje: "Banner eliminado",

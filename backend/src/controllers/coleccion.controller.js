@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { deleteCloudinaryResourceByUrl } from "../utils/cloudinaryCleanup.js";
 
 // 1. OBTENER TODAS LAS COLECCIONES (Público)
 export const obtenerColeccionesPublicas = async (req, res) => {
@@ -75,19 +76,34 @@ export const actualizarColeccion = async (req, res) => {
     const { id } = req.params;
     const { nombre, subtitulo, descripcion, imagen, activo, productosIds } = req.body;
 
+    const coleccionActual = await prisma.coleccion.findUnique({
+      where: { id: Number(id) },
+    });
+
+    if (!coleccionActual) {
+      return res.status(404).json({ mensaje: "Colección no encontrada" });
+    }
+
+    const nuevaImagen = imagen === "" ? null : imagen;
+    const imagenAnterior = coleccionActual.imagen;
+
     const coleccionActualizada = await prisma.coleccion.update({
       where: { id: Number(id) },
       data: {
         nombre,
         subtitulo,
         descripcion,
-        imagen,
+        imagen: nuevaImagen,
         activo,
         productos: {
           set: productosIds ? productosIds.map(id => ({ id: Number(id) })) : []
         }
       }
     });
+
+    if (imagenAnterior && imagenAnterior !== nuevaImagen) {
+      await deleteCloudinaryResourceByUrl(imagenAnterior);
+    }
 
     res.json(coleccionActualizada);
   } catch (error) {
@@ -101,9 +117,21 @@ export const eliminarColeccion = async (req, res) => {
   try {
     const { id } = req.params;
 
+    const coleccion = await prisma.coleccion.findUnique({
+      where: { id: Number(id) },
+    });
+
+    if (!coleccion) {
+      return res.status(404).json({ mensaje: "Colección no encontrada" });
+    }
+
     await prisma.coleccion.delete({
       where: { id: Number(id) },
     });
+
+    if (coleccion.imagen) {
+      await deleteCloudinaryResourceByUrl(coleccion.imagen);
+    }
 
     res.json({ mensaje: "Colección eliminada con éxito" });
   } catch (error) {
