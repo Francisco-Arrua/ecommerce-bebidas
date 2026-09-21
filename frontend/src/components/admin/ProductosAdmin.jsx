@@ -79,6 +79,7 @@ export default function ProductosAdmin() {
     }
 
     const nuevasImagenesProcesadas = [];
+    const erroresSubida = [];
 
     // Configuración de compresión optimizada para el catálogo
     const opcionesCompresion = {
@@ -132,7 +133,12 @@ export default function ProductosAdmin() {
         });
       } catch (error) {
         console.error("Error al subir una de las imágenes:", error);
+        erroresSubida.push(error.message || "No se pudo subir la imagen");
       }
+    }
+
+    if (erroresSubida.length > 0) {
+      alert(`No se pudieron subir ${erroresSubida.length} imagen(es):\n${erroresSubida.join("\n")}`);
     }
 
     if (esEdicion) {

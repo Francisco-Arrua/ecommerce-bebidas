@@ -11,7 +11,14 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 10 },
   fileFilter: (req, file, callback) => {
-    callback(null, ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.mimetype));
+    callback(null, [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "image/heic",
+      "image/heif",
+    ].includes(file.mimetype));
   },
 });
 
