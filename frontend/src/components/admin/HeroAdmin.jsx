@@ -177,13 +177,18 @@ export default function HeroAdmin() {
       formDataImagen.append("file", archivoParaSubir);
 
       // Subir al backend
+      const token = localStorage.getItem("token");
       const res = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
         method: "POST",
         credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formDataImagen,
       });
 
-      if (!res.ok) throw new Error("Error al subir archivo");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.mensaje || `Error al subir la imagen (${res.status})`);
+      }
       const data = await res.json();
 
       if (esEdicion) {

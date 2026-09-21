@@ -43,6 +43,7 @@ export default function BannerAdmin() {
       maxSizeMB: 1,            // Tamaño máximo de 1MB
       maxWidthOrHeight: 1920,  // Redimensiona si supera Full HD
       useWebWorker: true,      // Usa hilos de fondo para no congelar la UI
+      fileType: "image/jpeg",
     };
 
     try {
@@ -53,11 +54,18 @@ export default function BannerAdmin() {
       // Enviamos el archivo ya optimizado al servidor
       formData.append("file", archivoComprimido, archivoOriginal.name);
 
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/upload`, {
         method: "POST",
         credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.mensaje || `Error al subir la imagen (${res.status})`);
+      }
 
       const data = await res.json();
 

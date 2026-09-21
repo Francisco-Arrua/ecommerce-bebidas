@@ -65,13 +65,18 @@ export default function ColeccionesAdmin() {
       // Mandamos el archivo ya comprimido al backend
       formData.append("file", archivoComprimido);
 
+      const token = localStorage.getItem("token");
       const res = await fetch(`${import.meta.env.VITE_API_URL}/upload`, {
         method: "POST",
         credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Error al subir la imagen");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.mensaje || `Error al subir la imagen (${res.status})`);
+      }
 
       const data = await res.json();
       setImagen(data.url || data.secure_url); 

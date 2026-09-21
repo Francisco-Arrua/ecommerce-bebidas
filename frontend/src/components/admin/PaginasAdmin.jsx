@@ -41,6 +41,7 @@ export default function PaginasAdmin() {
       maxSizeMB: 1,           // Máximo 1MB aproximado
       maxWidthOrHeight: 1200,  // Ajusta la resolución si es una foto enorme de celular
       useWebWorker: true,     // Compresión en segundo plano para no trabar la interfaz
+      fileType: "image/jpeg",
     };
 
     let archivoParaSubir = archivoOriginal;
@@ -63,11 +64,19 @@ export default function PaginasAdmin() {
     formDataImagen.append("file", archivoParaSubir);
 
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/upload`, {
         method: "POST",
         credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formDataImagen,
       });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.mensaje || `Error al subir la imagen (${res.status})`);
+      }
+
       const data = await res.json();
 
       setFormulario((prev) => ({

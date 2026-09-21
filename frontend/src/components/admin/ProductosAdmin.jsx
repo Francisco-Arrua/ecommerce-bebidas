@@ -89,7 +89,10 @@ export default function ProductosAdmin() {
       if (archivo.type.startsWith("image/")) {
         try {
           // Comprimimos la imagen en el dispositivo del usuario
-          archivoParaSubir = await imageCompression(archivo, opcionesCompresion);
+          archivoParaSubir = await imageCompression(archivo, {
+            ...opcionesCompresion,
+            fileType: "image/jpeg",
+          });
         } catch (error) {
           console.error("Error al comprimir la imagen, se intentará subir original:", error);
           // Si por alguna razón falla la compresión, no bloqueamos el flujo; usamos el original
@@ -102,13 +105,18 @@ export default function ProductosAdmin() {
       formDataImagen.append("file", archivoParaSubir);
 
       try {
+        const token = localStorage.getItem("token");
         const res = await fetch(UPLOAD_ENDPOINT, {
           method: "POST",
           credentials: "include",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
           body: formDataImagen,
         });
-        
-        if (!res.ok) throw new Error("Error en la respuesta del servidor");
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.mensaje || `Error al subir la imagen (${res.status})`);
+        }
         
         const data = await res.json();
         const tienePrincipal = imagenesActuales.some(img => img.principal) || nuevasImagenesProcesadas.some(img => img.principal);
