@@ -5,9 +5,14 @@ const MAX_IMAGENES = 8;
 const API_URL = import.meta.env.VITE_API_URL;
 const UPLOAD_ENDPOINT = `${API_URL}/upload`;
 
-const obtenerHeadersAdmin = () => ({
-  "Content-Type": "application/json",
-});
+const obtenerHeadersAdmin = () => {
+  const token = localStorage.getItem("token");
+
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
 
 export default function ProductosAdmin() {
   const [editandoId, setEditandoId] = useState(null);
@@ -312,7 +317,10 @@ export default function ProductosAdmin() {
         }),
       });
 
-      if (!res.ok) throw new Error("Error al crear producto");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.mensaje || `Error al crear producto (${res.status})`);
+      }
 
       setFormData({
         nombre: "",
@@ -332,6 +340,7 @@ export default function ProductosAdmin() {
       obtenerProductos();
     } catch (error) {
       console.error(error);
+      alert(error.message || "No se pudo crear el producto.");
     }
   };
 
