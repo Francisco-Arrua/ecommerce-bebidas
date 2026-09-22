@@ -19,6 +19,7 @@ export default function ProductosAdmin() {
   const [busqueda, setBusqueda] = useState("");
 
   const [productos, setProductos] = useState([]);
+  const [stocksEditados, setStocksEditados] = useState({});
   const [categorias, setCategorias] = useState([]);
   const [subcategorias, setSubcategorias] = useState([]);
 
@@ -353,14 +354,19 @@ export default function ProductosAdmin() {
   const eliminarProducto = async (id) => {
     if (!confirm("¿Eliminar producto?")) return;
     try {
-      await fetch(`${API_URL}/productos/${id}`, {
+      const res = await fetch(`${API_URL}/productos/${id}`, {
         method: "DELETE",
         credentials: "include",
         headers: obtenerHeadersAdmin(),
       });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.mensaje || `No se pudo eliminar el producto (${res.status})`);
+      }
       obtenerProductos();
     } catch (error) {
       console.error(error);
+      alert(error.message || "No se pudo eliminar el producto.");
     }
   };
 
@@ -428,32 +434,31 @@ export default function ProductosAdmin() {
     }
   };
 
-  const modificarStock = async (producto, cambio) => {
-    try {
-      if (producto.tieneTalles) return;
+  const obtenerClaveStock = (productoId, talleId = "general") => `${productoId}-${talleId}`;
 
-      await fetch(`${API_URL}/productos/${producto.id}`, {
-        method: "PUT",
+  const cambiarStockEditado = (clave, valor) => {
+    setStocksEditados((prev) => ({ ...prev, [clave]: valor }));
+  };
+
+  const guardarStock = async (productoId, valor, talleId = null) => {
+    try {
+      const stock = Number(valor);
+      if (!Number.isInteger(stock) || stock < 0) return;
+
+      const res = await fetch(`${API_URL}/productos/${productoId}/stock`, {
+        method: "PATCH",
         credentials: "include",
         headers: obtenerHeadersAdmin(),
-        body: JSON.stringify({
-          nombre: producto.nombre,
-          descripcion: producto.descripcion,
-          marca: producto.marca,
-          categoriaId: producto.categoriaId,
-          subcategoriaId: producto.subcategoriaId,
-          precio: Number(producto.precio),
-          stock: Math.max(0, Number(producto.stock) + cambio),
-          tieneTalles: false,
-          activo: producto.activo,
-          destacado: producto.destacado,
-          talles: [],
-          imagenes: producto.imagenes || [],
-        }),
+        body: JSON.stringify({ stock, ...(talleId ? { talleId } : {}) }),
       });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.mensaje || `No se pudo actualizar el stock (${res.status})`);
+      }
       obtenerProductos();
     } catch (error) {
       console.error(error);
+      alert(error.message || "No se pudo actualizar el stock.");
     }
   };
 
@@ -794,7 +799,7 @@ export default function ProductosAdmin() {
                 </div>
 
                 {/* Información General */}
-                <div style={{ flex: 1, minWidth: "300px" }}>
+                <div style={{ flex: "1 1 300px", minWidth: 0 }}>
                   <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px", flexWrap: "wrap" }}>
                     <p style={{ margin: 0, color: "#64748b", fontSize: "13px", fontWeight: 600, textTransform: "uppercase" }}>{producto.marca || "Sin Marca"}</p>
                     {producto.destacado && (
@@ -827,20 +832,50 @@ export default function ProductosAdmin() {
                         <strong style={{ color: "#0f172a" }}>${Number(producto.precio).toLocaleString("es-AR")}</strong>
                       )}
                     </span>
-                    <span>
-                      <strong>Stock:</strong>{" "}
-                      <strong style={{ color: producto.stock === 0 ? "#ef4444" : "#0f172a" }}>{producto.stock} uds.</strong>
-                    </span>
+                    {!producto.tieneTalles && (
+                      <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <strong>Stock:</strong>
+                        <input
+                          type="number"
+                          min="0"
+                          value={stocksEditados[obtenerClaveStock(producto.id)] ?? producto.stock}
+                          onChange={(e) => cambiarStockEditado(obtenerClaveStock(producto.id), e.target.value)}
+                          onBlur={(e) => guardarStock(producto.id, e.target.value)}
+                          style={{ ...inputEstiloBase, width: "82px", padding: "6px 8px" }}
+                          aria-label={`Stock de ${producto.nombre}`}
+                        />
+                        <span>uds.</span>
+                      </label>
+                    )}
                   </div>
+
+                  {producto.tieneTalles && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+                      {producto.talles?.map((talle) => {
+                        const claveStock = obtenerClaveStock(producto.id, talle.id);
+                        return (
+                          <label key={talle.id} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 8px", border: "1px solid #e2e8f0", borderRadius: "10px", background: "#ffffff", fontSize: "13px", fontWeight: 700, color: "#475569" }}>
+                            <span>{talle.talle}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={stocksEditados[claveStock] ?? talle.stock}
+                              onChange={(e) => cambiarStockEditado(claveStock, e.target.value)}
+                              onBlur={(e) => guardarStock(producto.id, e.target.value, talle.id)}
+                              style={{ ...inputEstiloBase, width: "68px", padding: "6px 8px" }}
+                              aria-label={`Stock talle ${talle.talle} de ${producto.nombre}`}
+                            />
+                            <span style={{ fontWeight: 500 }}>uds.</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Controles Laterales */}
-                <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "flex-end", gap: "16px", marginLeft: "auto" }}>
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "stretch", gap: "16px", flex: "1 1 100%", width: "100%" }}>
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                    {!producto.tieneTalles && <>
-                      <button onClick={() => modificarStock(producto, -1)} style={botonAccionEstilo} onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff"}>-1 Stock</button>
-                      <button onClick={() => modificarStock(producto, 1)} style={botonAccionEstilo} onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff"}>+1 Stock</button>
-                    </>}
                     <button onClick={() => cambiarActivo(producto.id)} style={{ ...botonAccionEstilo, borderColor: producto.activo ? "#e2e8f0" : "#3b82f6", color: producto.activo ? "#475569" : "#3b82f6" }}>{producto.activo ? "Desactivar" : "Activar"}</button>
                     <button onClick={() => cambiarDestacado(producto.id)} style={{ ...botonAccionEstilo, color: producto.destacado ? "#eab308" : "#475569" }}>{producto.destacado ? "★ Destacado" : "☆ Destacar"}</button>
                   </div>

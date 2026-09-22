@@ -5,6 +5,7 @@ import {
   crearProducto,
   actualizarProducto,
   eliminarProducto,
+  actualizarStock,
   cambiarActivo,
   cambiarDestacado,
   getProductosRelacionados,
@@ -38,6 +39,9 @@ router.put("/:id", [verificarToken, soloAdmin], actualizarProducto);
 
 // Eliminar un producto por ID
 router.delete("/:id", [verificarToken, soloAdmin], eliminarProducto);
+
+// Actualizar el stock general o el stock de un talle
+router.patch("/:id/stock", [verificarToken, soloAdmin], actualizarStock);
 
 // Cambiar estado activo/inactivo (visibilidad en la tienda)
 router.patch("/activo/:id", [verificarToken, soloAdmin], cambiarActivo);

@@ -428,18 +428,23 @@ export const actualizarStock = async (req, res) => {
   try {
     const { id } = req.params;
     const { stock, talleId } = req.body;
+    const stockNumerico = Number(stock);
+
+    if (!Number.isInteger(stockNumerico) || stockNumerico < 0) {
+      return res.status(400).json({ mensaje: "El stock debe ser un número entero mayor o igual a cero" });
+    }
 
     if (talleId) {
       const talleActualizado = await prisma.talleProducto.update({
         where: { id: Number(talleId) },
-        data: { stock: Number(stock) },
+        data: { stock: stockNumerico },
       });
       return res.json(talleActualizado);
     }
 
     const producto = await prisma.producto.update({
       where: { id: Number(id) },
-      data: { stock: Number(stock) },
+      data: { stock: stockNumerico },
       include: { talles: true },
     });
 
