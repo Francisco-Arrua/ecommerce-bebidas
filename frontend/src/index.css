@@ -43,3 +43,13 @@ input[type="file"]::file-selector-button:hover {
   background-color: #f1f5f9;
   border-color: #94a3b8;
 }
+
+.stock-input::-webkit-outer-spin-button,
+.stock-input::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.stock-input {
+  -moz-appearance: textfield;
+}

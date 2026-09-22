@@ -616,7 +616,7 @@ export default function ProductosAdmin() {
     );
   };
 
-  const EditorTalles = ({ talles, esEdicion = false }) => (
+  const renderEditorTalles = (talles, esEdicion = false) => (
     <div style={{ gridColumn: "1 / -1", padding: "16px", borderRadius: "14px", background: "#f8fafc", border: "1px solid #e2e8f0" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
         <div>
@@ -632,7 +632,7 @@ export default function ProductosAdmin() {
         {talles.map((talle, indice) => (
           <div key={`${talle.id || "nuevo"}-${indice}`} style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "8px", alignItems: "center" }}>
             <input value={talle.talle} onChange={(e) => actualizarTalle(indice, "talle", e.target.value, esEdicion)} placeholder="Ej. M" style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
-            <input type="number" min="0" value={talle.stock} onChange={(e) => actualizarTalle(indice, "stock", e.target.value, esEdicion)} placeholder="Stock" style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
+            <input className="stock-input" type="number" min="0" value={talle.stock} onChange={(e) => actualizarTalle(indice, "stock", e.target.value, esEdicion)} placeholder="Stock" style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
             <button type="button" onClick={() => eliminarTalle(indice, esEdicion)} style={{ ...botonAccionEstilo, color: "#ef4444", borderColor: "#fecaca" }}>Quitar</button>
           </div>
         ))}
@@ -720,7 +720,7 @@ export default function ProductosAdmin() {
               <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#475569", fontWeight: 700 }}><input type="checkbox" name="destacado" checked={formData.destacado} onChange={handleChange} /> Destacado</label>
             </div>
 
-            {formData.tieneTalles && <EditorTalles talles={tallesNuevos} />}
+            {formData.tieneTalles && renderEditorTalles(tallesNuevos)}
             
             <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "10px" }}>
               <label style={{ fontSize: "13px", fontWeight: 700, color: "#475569" }}>Imágenes de Exhibición</label>
@@ -836,6 +836,7 @@ export default function ProductosAdmin() {
                       <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <strong>Stock:</strong>
                         <input
+                          className="stock-input"
                           type="number"
                           min="0"
                           value={stocksEditados[obtenerClaveStock(producto.id)] ?? producto.stock}
@@ -857,6 +858,7 @@ export default function ProductosAdmin() {
                           <label key={talle.id} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 8px", border: "1px solid #e2e8f0", borderRadius: "10px", background: "#ffffff", fontSize: "13px", fontWeight: 700, color: "#475569" }}>
                             <span>{talle.talle}</span>
                             <input
+                              className="stock-input"
                               type="number"
                               min="0"
                               value={stocksEditados[claveStock] ?? talle.stock}
@@ -924,7 +926,7 @@ export default function ProductosAdmin() {
                       <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#475569", fontWeight: 700 }}><input type="checkbox" name="destacado" checked={editForm.destacado} onChange={handleEditChange} /> Destacado</label>
                     </div>
 
-                    {editForm.tieneTalles && <EditorTalles talles={editForm.talles} esEdicion />}
+                    {editForm.tieneTalles && renderEditorTalles(editForm.talles, true)}
 
                     {/* BLOQUE DE OFERTA */}
                     <div
