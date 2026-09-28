@@ -6,8 +6,7 @@ const C = {
   textoSuave: "#a1a1a1",
   textoTenue: "#6b6b6b",
   hover: "rgba(255, 255, 255, 0.08)",
-  activo: "rgba(37, 99, 235, 0.16)",
-  azul: "#2365f5e7"
+  activo: "rgba(255, 255, 255, 0.14)",
 };
 
 const css = `
@@ -194,7 +193,7 @@ export default function Sidebar({ seccion, setSeccion }) {
     fontSize: "13.5px",
     fontWeight: esActivo ? 600 : 500,
     color: esActivo ? C.texto : C.textoSuave,
-    background: esActivo ? C.azul : "transparent",
+    background: esActivo ? C.activo : "transparent",
     cursor: "pointer",
     textAlign: "left",
     position: "relative",
