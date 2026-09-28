@@ -226,7 +226,7 @@ export default function ColeccionesAdmin() {
           Gestión de Colecciones
         </h1>
         <p style={{ margin: "6px 0 0 0", color: "#64748b", fontSize: "14px", fontWeight: 500 }}>
-          Diseña combos comerciales, agrupaciones de productos y promociones destacadas.
+          Diseña tus combos comerciales, agrupaciones de productos y promociones destacadas.
         </p>
       </header>
 

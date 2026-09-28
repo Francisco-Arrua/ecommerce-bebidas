@@ -241,19 +241,18 @@ export default function CredencialesMP() {
               </svg>
             </span>
             <h3 style={{ fontSize: "12px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
-              Actualizar Credenciales
+              Completa con tus Credenciales
             </h3>
           </div>
 
           <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 18px 0", lineHeight: 1.5 }}>
             Estos datos conectan tu tienda con tu cuenta de Mercado Pago. Los encontrás
             en Mercado Pago, dentro de <strong>Configuración de tu aplicación &gt; Credenciales</strong>.
-            Por seguridad, al guardar cambios tenés que volver a pegar el Access Token y la Public Key completos.
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Access Token de Mercado Pago *</label>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Access Token de Mercado Pago</label>
               <input
                 type="password"
                 placeholder="APP_USR-xxxxxxxx-xxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxxx"
@@ -264,12 +263,12 @@ export default function CredencialesMP() {
                 onBlur={manejarBlur}
               />
               <span style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.45 }}>
-                Es la clave privada que autoriza al backend a crear preferencias y consultar pagos. No la compartas ni la pongas en el frontend.
+                Clave privada.
               </span>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Public Key de Mercado Pago *</label>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Public Key de Mercado Pago</label>
               <input
                 type="text"
                 placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -280,13 +279,13 @@ export default function CredencialesMP() {
                 onBlur={manejarBlur}
               />
               <span style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.45 }}>
-                Es el identificador público de tu aplicación. Mercado Pago la muestra junto al Access Token.
+                Es el identificador público de tu aplicación.
               </span>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>
-                Clave secreta del Webhook *
+                Clave secreta del Webhook
               </label>
               <input
                 type="password"

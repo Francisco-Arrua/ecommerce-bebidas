@@ -74,7 +74,7 @@ export default function ConfiguracionAdmin() {
           Configuración General
         </h1>
         <p style={{ margin: "6px 0 0 0", color: "#64748b", fontSize: "14px", fontWeight: 500 }}>
-          Administra la identidad global y los canales de contacto directos de tu tienda.
+          Llena los campos con la información de tu tienda.
         </p>
       </header>
 
@@ -92,14 +92,6 @@ export default function ConfiguracionAdmin() {
       >
         {/* BLOQUE 1: Información de la tienda */}
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-            <span style={{ color: "#3b82f6", display: "flex" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            </span>
-            <h3 style={{ fontSize: "12px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
-              Identidad del Sitio
-            </h3>
-          </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Nombre de la Tienda</label>
@@ -125,20 +117,12 @@ export default function ConfiguracionAdmin() {
 
         {/* BLOQUE 2: Redes y Enlaces de Contacto */}
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-            <span style={{ color: "#3b82f6", display: "flex" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-            </span>
-            <h3 style={{ fontSize: "12px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
-              Canales de Comunicación
-            </h3>
-          </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
             
             {/* WhatsApp */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Número de WhatsApp (con código de país)</label>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Número de WhatsApp</label>
               <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
                 <span style={{ position: "absolute", left: "16px", color: "#94a3b8", fontSize: "14px", fontWeight: 600 }}>+</span>
                 <input

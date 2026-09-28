@@ -148,7 +148,7 @@ export default function Navbar() {
   return (
   <header
     style={{
-      background: "rgba(6, 6, 6, 0.95)", 
+      background: "rgb(0, 0, 0)", 
       backdropFilter: "blur(16px)", 
       position: "sticky",
       top: 0,
