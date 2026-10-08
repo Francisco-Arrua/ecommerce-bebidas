@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 // 1. Importamos la librería de compresión
 import imageCompression from "browser-image-compression";
+import IconoPapelera from "../IconoPapelera";
 
 export default function PaginasAdmin() {
   const [paginas, setPaginas] = useState([]);
@@ -401,9 +402,9 @@ export default function PaginasAdmin() {
 
                     <div style={{ display: "flex", gap: "20px", fontSize: "13px", color: "#475569", borderTop: "1px solid #f1f5f9", paddingTop: "10px", marginTop: "10px", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: "12px", fontWeight: 500, color: "#64748b" }}>Posición: <strong style={{ color: "#0f172a" }}>{pagina.orden}</strong></span>
-                      <div style={{ display: "flex", gap: "8px" }}>
+                      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
                         <button onClick={() => editarPagina(pagina)} style={botonAccionEstilo} onMouseEnter={(e) => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.color = "#0f172a"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.color = "#475569"; }}>Editar</button>
-                        <button onClick={() => eliminarPagina(pagina.id)} style={{ ...botonAccionEstilo, borderColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", background: "rgba(239, 68, 68, 0.02)" }} onMouseEnter={(e) => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "white"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.02)"; e.currentTarget.style.color = "#ef4444"; }}>Eliminar</button>
+                        <button type="button" title="Eliminar" aria-label="Eliminar página" onClick={() => eliminarPagina(pagina.id)} style={{ ...botonAccionEstilo, width: "38px", height: "38px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", borderColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", background: "rgba(239, 68, 68, 0.02)" }} onMouseEnter={(e) => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "white"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.02)"; e.currentTarget.style.color = "#ef4444"; }}><IconoPapelera /></button>
                       </div>
                     </div>
                   </div>

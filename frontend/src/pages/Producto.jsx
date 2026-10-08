@@ -19,6 +19,8 @@ export default function Producto() {
   const [cantidad, setCantidad] = useState(1);
   const [errorTalle, setErrorTalle] = useState(false);
   const [agregadoExito, setAgregadoExito] = useState(false);
+  const [agregando, setAgregando] = useState(false);
+  const [errorCarrito, setErrorCarrito] = useState("");
 
   const { agregarProducto } = useContext(CartContext);
 
@@ -59,39 +61,81 @@ export default function Producto() {
       <>
         <Navbar />
         <div
+          role="status"
+          aria-live="polite"
           style={{
             minHeight: "70vh",
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
             alignItems: "center",
             background: "#ffffff",
             fontFamily: "Inter, sans-serif",
+            padding: "48px 24px",
+            boxSizing: "border-box",
           }}
         >
-          <div
-            style={{
-              width: "32px",
-              height: "32px",
-              border: "2px solid #e2e8f0",
-              borderTopColor: "#0f172a",
-              borderRadius: "0px",
-              animation: "spin 1s linear infinite",
-            }}
-          />
-          <h3
-            style={{
-              marginTop: "16px",
-              color: "#0f172a",
-              fontWeight: 700,
-              fontSize: "14px",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-            }}
-          >
-            Cargando producto...
-          </h3>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <div className="producto-loading" aria-hidden="true">
+            <div className="producto-loading-imagen producto-loading-shimmer" />
+            <div className="producto-loading-detalle">
+              <div className="producto-loading-marca producto-loading-shimmer" />
+              <div className="producto-loading-titulo producto-loading-shimmer" />
+              <div className="producto-loading-titulo-corto producto-loading-shimmer" />
+              <div className="producto-loading-precio producto-loading-shimmer" />
+              <div className="producto-loading-linea producto-loading-shimmer" />
+              <div className="producto-loading-linea producto-loading-linea-corta producto-loading-shimmer" />
+              <div className="producto-loading-boton producto-loading-shimmer" />
+              <div className="producto-loading-estado">
+                <span className="producto-loading-indicador" />
+                Preparando producto...
+              </div>
+            </div>
+          </div>
+          <style>{`
+            .producto-loading {
+              width: min(100%, 1180px);
+              margin: 0 auto;
+              display: grid;
+              grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.8fr);
+              gap: clamp(32px, 7vw, 96px);
+              align-items: center;
+            }
+            .producto-loading-shimmer {
+              position: relative;
+              overflow: hidden;
+              background: #f1f1f1;
+            }
+            .producto-loading-shimmer::after {
+              position: absolute;
+              inset: 0;
+              content: "";
+              transform: translateX(-100%);
+              background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+              animation: producto-shimmer 1.6s ease-in-out infinite;
+            }
+            .producto-loading-imagen {
+              aspect-ratio: 4 / 5;
+              width: 100%;
+              max-height: 640px;
+            }
+            .producto-loading-detalle { display: flex; flex-direction: column; align-items: flex-start; }
+            .producto-loading-marca { width: 76px; height: 10px; margin-bottom: 22px; }
+            .producto-loading-titulo { width: min(100%, 340px); height: 24px; margin-bottom: 10px; }
+            .producto-loading-titulo-corto { width: 58%; height: 24px; margin-bottom: 28px; }
+            .producto-loading-precio { width: 112px; height: 20px; margin-bottom: 32px; }
+            .producto-loading-linea { width: 100%; max-width: 390px; height: 10px; margin-bottom: 9px; }
+            .producto-loading-linea-corta { width: 72%; margin-bottom: 34px; }
+            .producto-loading-boton { width: min(100%, 300px); height: 48px; margin-bottom: 28px; background: #ededed; }
+            .producto-loading-estado { display: flex; align-items: center; gap: 10px; color: #737373; font-size: 12px; font-weight: 600; }
+            .producto-loading-indicador { width: 8px; height: 8px; border-radius: 50%; background: #171717; animation: producto-pulse 1.2s ease-in-out infinite; }
+            @keyframes producto-shimmer { to { transform: translateX(100%); } }
+            @keyframes producto-pulse { 50% { opacity: 0.3; transform: scale(0.75); } }
+            @media (max-width: 700px) {
+              .producto-loading { grid-template-columns: 1fr; gap: 28px; max-width: 480px; }
+              .producto-loading-imagen { aspect-ratio: 1 / 1; max-height: 420px; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .producto-loading-shimmer::after, .producto-loading-indicador { animation: none; }
+            }
+          `}</style>
         </div>
         <Footer />
       </>
@@ -124,7 +168,8 @@ export default function Producto() {
     setCantidad(1);
   };
 
-  const manejarAgregarCarrito = () => {
+  const manejarAgregarCarrito = async () => {
+    if (agregando) return;
     if (producto.tieneTalles && !talleSeleccionado) {
       setErrorTalle(true);
       return;
@@ -141,10 +186,15 @@ export default function Producto() {
       cantidad,
     };
 
-    // ⚠️ Ajustá esta llamada a la firma real de tu CartContext.
-    // Si tu agregarProducto espera (id, cantidad), usá:
-    // agregarProducto(producto.id, cantidad);
-    agregarProducto(itemParaCarrito);
+    setErrorCarrito("");
+  setAgregando(true);
+    const resultado = await agregarProducto(itemParaCarrito);
+  setAgregando(false);
+    if (!resultado?.ok) {
+      setAgregadoExito(false);
+      setErrorCarrito(resultado?.mensaje || "No se pudo agregar el producto al carrito.");
+      return;
+    }
 
     setAgregadoExito(true);
     setTimeout(() => setAgregadoExito(false), 2500);
@@ -481,7 +531,7 @@ export default function Producto() {
           {/* 🛒 BOTÓN AGREGAR AL CARRITO (ESTILO INDUSTRIAL) */}
           <button
             onClick={manejarAgregarCarrito}
-            disabled={sinStockGeneral || (producto.tieneTalles && talleSeleccionado?.stock <= 0)}
+            disabled={agregando || sinStockGeneral || (producto.tieneTalles && talleSeleccionado?.stock <= 0)}
             style={{
               display: "flex",
               alignItems: "center",
@@ -498,16 +548,17 @@ export default function Producto() {
               fontSize: "14px",
               textTransform: "uppercase",
               letterSpacing: "0.03em",
-              cursor: sinStockGeneral ? "not-allowed" : "pointer",
+              cursor: agregando || sinStockGeneral ? "not-allowed" : "pointer",
+              opacity: agregando ? 0.75 : 1,
               transition: "all 0.2s ease",
               textAlign: "center",
               marginBottom: "12px",
             }}
             onMouseEnter={(e) => {
-              if (!sinStockGeneral) e.currentTarget.style.background = "#334155";
+              if (!agregando && !sinStockGeneral) e.currentTarget.style.background = "#334155";
             }}
             onMouseLeave={(e) => {
-              if (!sinStockGeneral) e.currentTarget.style.background = "#0f172a";
+              if (!agregando && !sinStockGeneral) e.currentTarget.style.background = "#0f172a";
             }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -515,11 +566,18 @@ export default function Producto() {
               <circle cx="20" cy="21" r="1"></circle>
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
             </svg>
-            {sinStockGeneral ? "Agotado" : "Agregar al carrito"}
+            {sinStockGeneral ? "Agotado" : agregando ? "Agregando..." : "Agregar al carrito"}
           </button>
+
+          {errorCarrito && (
+            <div role="alert" style={{ marginTop: "16px", padding: "12px", backgroundColor: "#fef2f2", color: "#b91c1c", fontSize: "13px", fontWeight: 700, textAlign: "center" }}>
+              {errorCarrito}
+            </div>
+          )}
 
           {agregadoExito && (
             <div
+              role="status"
               style={{
                 marginTop: "16px",
                 padding: "12px",

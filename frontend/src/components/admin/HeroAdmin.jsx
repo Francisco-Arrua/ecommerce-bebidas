@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import imageCompression from "browser-image-compression";
+import IconoPapelera from "../IconoPapelera";
 
 export default function HeroAdmin() {
   const [slides, setSlides] = useState([]);
@@ -563,7 +564,7 @@ export default function HeroAdmin() {
                       </span>
                     </div>
 
-                    <div style={{ display: "flex", gap: "8px" }}>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
                       <button
                         onClick={() => cambiarActivo(slide.id)}
                         style={botonAccionEstilo}
@@ -584,7 +585,10 @@ export default function HeroAdmin() {
 
                       <button
                         onClick={() => eliminarSlide(slide.id)}
-                        style={{ ...botonAccionEstilo, borderColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", background: "rgba(239, 68, 68, 0.02)" }}
+                        type="button"
+                        title="Eliminar"
+                        aria-label="Eliminar portada"
+                        style={{ ...botonAccionEstilo, width: "38px", height: "38px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", borderColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", background: "rgba(239, 68, 68, 0.02)" }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = "#ef4444";
                           e.currentTarget.style.color = "white";
@@ -594,7 +598,7 @@ export default function HeroAdmin() {
                           e.currentTarget.style.color = "#ef4444";
                         }}
                       >
-                        Eliminar
+                        <IconoPapelera />
                       </button>
                     </div>
                   </div>

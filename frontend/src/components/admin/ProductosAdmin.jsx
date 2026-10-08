@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import imageCompression from "browser-image-compression";
+import IconoPapelera from "../IconoPapelera";
 
 const MAX_IMAGENES = 8;
 const API_URL = import.meta.env.VITE_API_URL;
@@ -633,7 +634,7 @@ export default function ProductosAdmin() {
           <div key={`${talle.id || "nuevo"}-${indice}`} style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: "8px", alignItems: "center" }}>
             <input value={talle.talle} onChange={(e) => actualizarTalle(indice, "talle", e.target.value, esEdicion)} placeholder="Ej. M" style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
             <input className="stock-input" type="number" min="0" value={talle.stock} onChange={(e) => actualizarTalle(indice, "stock", e.target.value, esEdicion)} placeholder="Stock" style={inputEstiloBase} onFocus={manejarFocusInput} onBlur={manejarBlurInput} />
-            <button type="button" onClick={() => eliminarTalle(indice, esEdicion)} style={{ ...botonAccionEstilo, color: "#ef4444", borderColor: "#fecaca" }}>Quitar</button>
+            <button type="button" onClick={() => eliminarTalle(indice, esEdicion)} title="Quitar talle" aria-label={`Quitar talle ${talle.talle}`} style={{ ...botonAccionEstilo, width: "38px", height: "38px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444", borderColor: "#fecaca" }}><IconoPapelera /></button>
           </div>
         ))}
       </div>
@@ -882,9 +883,9 @@ export default function ProductosAdmin() {
                     <button onClick={() => cambiarDestacado(producto.id)} style={{ ...botonAccionEstilo, color: producto.destacado ? "#eab308" : "#475569" }}>{producto.destacado ? "★ Destacado" : "☆ Destacar"}</button>
                   </div>
 
-                  <div style={{ display: "flex", gap: "8px" }}>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     <button onClick={() => comenzarEdicion(producto)} style={{ ...botonAccionEstilo, background: "#0f172a", color: "#ffffff", border: "none" }} onMouseEnter={(e) => e.currentTarget.style.background = "#1e293b"} onMouseLeave={(e) => e.currentTarget.style.background = "#0f172a"}>Editar</button>
-                    <button onClick={() => eliminarProducto(producto.id)} style={{ ...botonAccionEstilo, borderColor: "#fecaca", color: "#ef4444" }} onMouseEnter={(e) => e.currentTarget.style.background = "#fff5f5"} onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff"}>Eliminar</button>
+                    <button type="button" onClick={() => eliminarProducto(producto.id)} title="Eliminar" aria-label={`Eliminar ${producto.nombre}`} style={{ ...botonAccionEstilo, width: "38px", height: "38px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", borderColor: "#fecaca", color: "#ef4444" }} onMouseEnter={(e) => e.currentTarget.style.background = "#fff5f5"} onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff"}><IconoPapelera /></button>
                   </div>
                 </div>
 

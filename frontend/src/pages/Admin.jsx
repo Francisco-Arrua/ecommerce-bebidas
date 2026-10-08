@@ -12,6 +12,7 @@ import Clientes from "../components/admin/Clientes";
 import ColeccionesAdmin from "../components/admin/ColeccionesAdmin";
 import CredencialesMP from "../components/admin/CredencialesMPAdmin";
 import PedidosAdmin from "../components/admin/PedidosAdmin";
+import Manual from "../components/admin/Manual";
 
 import { useEffect, useState } from "react";
 
@@ -81,6 +82,7 @@ export default function Admin() {
           {seccion === "clientes" && <Clientes />}
           {seccion === "credenciales" && <CredencialesMP />}
           {seccion === "pedidos" && <PedidosAdmin />}
+          {seccion === "manual" && <Manual />}
         </div>
       </div>
     </div>

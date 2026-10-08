@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 // 1. Importamos el compresor
 import imageCompression from "browser-image-compression";
+import IconoPapelera from "../IconoPapelera";
 
 export default function BannerAdmin() {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -542,7 +543,7 @@ export default function BannerAdmin() {
                     </div>
 
                     {/* Botones */}
-                    <div style={{ display: "flex", gap: "8px" }}>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
                       <button
                         onClick={() => editarBanner(banner)}
                         style={{ ...botonAccionEstilo, borderColor: "#eab308", color: "#d97706", background: "rgba(234, 179, 8, 0.02)" }}
@@ -563,11 +564,14 @@ export default function BannerAdmin() {
                       
                       <button
                         onClick={() => eliminarBanner(banner.id)}
-                        style={{ ...botonAccionEstilo, borderColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", background: "rgba(239, 68, 68, 0.02)" }}
+                        type="button"
+                        title="Eliminar"
+                        aria-label="Eliminar anuncio"
+                        style={{ ...botonAccionEstilo, width: "38px", height: "38px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", borderColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", background: "rgba(239, 68, 68, 0.02)" }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "white"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.02)"; e.currentTarget.style.color = "#ef4444"; }}
                       >
-                        Eliminar
+                        <IconoPapelera />
                       </button>
                     </div>
                   </div>

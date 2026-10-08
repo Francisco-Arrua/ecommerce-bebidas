@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import imageCompression from "browser-image-compression";
+import IconoPapelera from "../IconoPapelera";
 
 export default function ColeccionesAdmin() {
   const [colecciones, setColecciones] = useState([]);
@@ -520,7 +521,7 @@ export default function ColeccionesAdmin() {
                       </span>
                     </div>
 
-                    <div style={{ display: "flex", gap: "8px" }}>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
                       <button
                         onClick={() => comenzarEdicion(col)}
                         style={{ ...botonAccionEstilo, background: "#0f172a", color: "#ffffff", borderColor: "#0f172a" }}
@@ -532,7 +533,10 @@ export default function ColeccionesAdmin() {
 
                       <button
                         onClick={() => manejarEliminarColeccion(col.id)}
-                        style={{ ...botonAccionEstilo, borderColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", background: "rgba(239, 68, 68, 0.02)" }}
+                        type="button"
+                        title="Eliminar"
+                        aria-label="Eliminar colección"
+                        style={{ ...botonAccionEstilo, width: "38px", height: "38px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", borderColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", background: "rgba(239, 68, 68, 0.02)" }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = "#ef4444";
                           e.currentTarget.style.color = "white";
@@ -542,7 +546,7 @@ export default function ColeccionesAdmin() {
                           e.currentTarget.style.color = "#ef4444";
                         }}
                       >
-                        Eliminar
+                        <IconoPapelera />
                       </button>
                     </div>
                   </div>
